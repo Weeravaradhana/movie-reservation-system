@@ -19,6 +19,12 @@ import java.util.Set;
 public class UserRole {
     @Id
     private String id;
+
+    public UserRole(String id, String roleName) {
+        this.id = id;
+        this.roleName = roleName;
+    }
+
     @Column(name = "role_name")
     private String roleName;
 

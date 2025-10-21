@@ -1,10 +1,13 @@
 package com.group8.movie_reservation_system.api;
 
 import com.group8.movie_reservation_system.dto.request.RequestBookingDto;
+import com.group8.movie_reservation_system.dto.request.RequestSeatSelectionDto;
 import com.group8.movie_reservation_system.dto.response.ResponseBookingDto;
 import com.group8.movie_reservation_system.dto.response.paginate.AvailablePaginateResponseDto;
 import com.group8.movie_reservation_system.dto.response.paginate.BookingPaginateResponseDto;
+import com.group8.movie_reservation_system.exception.DuplicateEntryException;
 import com.group8.movie_reservation_system.service.BookingService;
+import com.group8.movie_reservation_system.service.SeatService;
 import com.group8.movie_reservation_system.util.StandardResponseDto;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/booking-management-service/api/v1/bookings")
@@ -20,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final SeatService seatService;
+
 
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
@@ -135,4 +143,24 @@ public class BookingController {
                 HttpStatus.UNAUTHORIZED
         );
     }
+
+    @PostMapping("/confirm-seats")
+    public ResponseEntity<?> confirmSeats(
+            @RequestParam Long showtimeId,
+            @RequestBody List<RequestSeatSelectionDto> seats) {
+
+        if (seats.isEmpty()) {
+            return ResponseEntity.badRequest().body("No seats selected");
+        }
+
+        try {
+            BigDecimal totalPrice = seatService.bookSeats(showtimeId, seats);
+            return ResponseEntity.ok("Seats successfully booked. Total Price: $" + totalPrice);
+        } catch (DuplicateEntryException e) {
+            return ResponseEntity.status(409).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500).body(e.getMessage());
+        }
+    }
+
 }

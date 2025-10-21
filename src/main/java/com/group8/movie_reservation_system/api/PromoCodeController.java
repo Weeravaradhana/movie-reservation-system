@@ -12,20 +12,21 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/deal-management-service/api/v1/promo-code")
+@RequestMapping("deal-management-service/api/v1/promo-code")
 @RequiredArgsConstructor
 public class PromoCodeController {
 
     private final PromoCodeService promoCodeService;
 
-    @PostMapping("/admin/create/{id}")
+    @PostMapping("/admin/create")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     public ResponseEntity<StandardResponseDto> create(
-            @RequestBody RequestPromoCodeDto promoCodeRequestDto, @PathVariable("id") String id,
+            @RequestBody RequestPromoCodeDto promoCodeRequestDto,
             HttpSession session
             ){
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
+        String loggedUserId = (String) session.getAttribute("loggedUserId");
         System.out.println(loggedUserRole);
         if (loggedUserRole == null) {
 
@@ -44,7 +45,7 @@ public class PromoCodeController {
             );
         }
 
-        promoCodeService.savePromoCode(promoCodeRequestDto,id);
+        promoCodeService.savePromoCode(promoCodeRequestDto,loggedUserId);
         return new ResponseEntity<>(
                 new StandardResponseDto(
                         201,"Promo code saved! ",null
@@ -70,7 +71,7 @@ public class PromoCodeController {
 
         }
 
-        if(!loggedUserRole.equals("ADMIN")) {
+        if(!loggedUserRole.equals("ROLE_ADMIN")) {
 
             return new ResponseEntity<>(
                     new StandardResponseDto(403, "Forbidden: Only admin can create promo code", null),
@@ -103,7 +104,7 @@ public class PromoCodeController {
 
         }
 
-        if(!loggedUserRole.equals("ADMIN")) {
+        if(!loggedUserRole.equals("ROLE_ADMIN")) {
 
             return new ResponseEntity<>(
                     new StandardResponseDto(403, "Forbidden: Only admin can create promo code", null),
@@ -173,7 +174,7 @@ public class PromoCodeController {
 
         }
 
-        if(!loggedUserRole.equals("ADMIN")) {
+        if(!loggedUserRole.equals("ROLE_ADMIN")) {
 
             return new ResponseEntity<>(
                     new StandardResponseDto(403, "Forbidden: Only admin can create promo code", null),

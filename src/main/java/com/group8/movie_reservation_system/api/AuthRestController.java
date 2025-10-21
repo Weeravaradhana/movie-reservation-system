@@ -37,13 +37,13 @@ public class AuthRestController {
     public ResponseEntity<StandardResponseDto> login(@RequestBody RequestLoginDto dto, HttpSession session) {
         ResponseUserDto responseUserDto = userService.findByUsername(dto.getUsername());
 
-
         userService.login(dto);
+        System.out.println(responseUserDto.getRole());
         session.setAttribute("loggedUserId",responseUserDto.getId());
         session.setAttribute("loggedUserRole",responseUserDto.getRole());
         session.setAttribute("loggedUserEmail",responseUserDto.getUsername());
         return new ResponseEntity<>(
-                new StandardResponseDto(200,"User login successfully",null),
+                new StandardResponseDto(200,"User login successfully",responseUserDto),
                 HttpStatus.OK
         );
 

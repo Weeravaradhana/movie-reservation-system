@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Deal Management System - Modern UI</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+        /* ====== Base & Background ====== */
+        :root{
+            --glass-bg: rgba(255,255,255,0.06);
+            --glass-border: rgba(255,255,255,0.08);
+            --accent: #6ee7b7; /* mint */
+            --accent-2: #60a5fa; /* blue */
+            --muted: rgba(255,255,255,0.75);
+            --card-radius: 14px;
+            --glass-blur: 8px;
+        }
+
+        html,body{
+            height:100%;
+            margin:0;
+            font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+            color:var(--muted);
+        }
+
+        /* animated gradient background */
+        body{
+            background: linear-gradient(135deg, #0f172a 0%, #071129 50%, #04111a 100%);
+            overflow-y:auto;
+            position:relative;
+        }
+
+        /* dark transparent overlay with subtle noise/texture feel */
+        body::before{
+            content:"";
+            position:fixed;
+            inset:0;
+            background: radial-gradient( circle at 10% 10%, rgba(96,165,250,0.06), transparent 10%),
+            radial-gradient( circle at 90% 80%, rgba(110,231,183,0.03), transparent 10%);
+            pointer-events:none;
+            z-index:0;
+        }
+
+        .container{
+            max-width:1100px;
+            margin:36px auto;
+            padding:28px;
+            position:relative;
+            z-index:1;
+        }
+
+        h2{
+            margin:0 0 12px 0;
+            color:#e6eef8;
+            font-weight:600;
+            letter-spacing:0.2px;
+        }
+
+        /* ====== Glass Cards ====== */
+        .card{
+            background: linear-gradient( to right bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.02) );
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(var(--glass-blur));
+            border-radius: var(--card-radius);
+            padding:20px;
+            box-shadow: 0 6px 30px rgba(2,6,23,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+            margin-bottom:20px;
+            transition: transform 300ms cubic-bezier(.2,.9,.3,1), box-shadow 300ms;
+        }
+
+        .card:hover{
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(2,6,23,0.8);
+        }
+
+        /* ====== Form Controls ====== */
+        .form-row{
+            display:flex;
+            gap:16px;
+            flex-wrap:wrap;
+            margin-bottom:8px;
+        }
+
+        .field{
+            flex:1;
+            min-width:180px;
+            display:flex;
+            flex-direction:column;
+        }
+
+        label{
+            font-size:13px;
+            color:rgba(230,238,248,0.9);
+            margin-bottom:8px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="number"]{
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            padding:10px 12px;
+            border-radius:10px;
+            color:var(--muted);
+            outline:none;
+            transition: box-shadow 180ms, transform 180ms, border-color 180ms;
+            font-size:14px;
+        }
+
+        input[type="text"]::placeholder{
+            color: rgba(255,255,255,0.3);
+        }
+
+        input:focus{
+            box-shadow: 0 6px 18px rgba(96,165,250,0.06);
+            border-color: rgba(96,165,250,0.6);
+            transform: translateY(-1px);
+        }
+
+        .checkbox-row{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            margin-top: 22px;
+            color: rgba(230,238,248,0.9);
+            font-size:14px;
+        }
+
+        /* floating action buttons */
+        .btn{
+            display:inline-flex;
+            align-items:center;
+            gap:10px;
+            padding:10px 14px;
+            border-radius:12px;
+            cursor:pointer;
+            border: none;
+            font-weight:600;
+            font-size:14px;
+            transition: transform 160ms, box-shadow 160ms, opacity 160ms;
+            background: linear-gradient(90deg,var(--accent), var(--accent-2));
+            color: #02203a;
+            box-shadow: 0 8px 20px rgba(96,165,250,0.12);
+        }
+
+        .btn.secondary{
+            background: transparent;
+            border:1px solid rgba(255,255,255,0.06);
+            color:var(--muted);
+            box-shadow:none;
+        }
+
+        .btn:hover{ transform: translateY(-3px); opacity:0.98; }
+
+        /* ====== Search Input + header layout ====== */
+        .header-row{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:12px;
+        }
+
+        .search{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            background: rgba(255,255,255,0.02);
+            border-radius:12px;
+            padding:8px;
+            border:1px solid rgba(255,255,255,0.04);
+            min-width:260px;
+        }
+
+        .search input{
+            border:none;
+            background:transparent;
+            outline:none;
+            color:var(--muted);
+            width:220px;
+            font-size:14px;
+        }
+
+        .search .dot{
+            height:10px;
+            width:10px;
+            border-radius:50%;
+            background:linear-gradient(45deg,var(--accent),var(--accent-2));
+            box-shadow:0 4px 10px rgba(96,165,250,0.18);
+        }
+
+        /* ====== Table ====== */
+        .table-wrap{
+            overflow-x:auto;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            color:var(--muted);
+        }
+
+        thead th{
+            text-align:left;
+            font-size:13px;
+            padding:12px 14px;
+            color:rgba(220,230,245,0.9);
+            letter-spacing:0.3px;
+            border-bottom:1px solid rgba(255,255,255,0.03);
+            background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+        }
+
+        tbody td{
+            padding:12px 14px;
+            border-bottom:1px dashed rgba(255,255,255,0.02);
+            font-size:14px;
+        }
+
+        tbody tr{
+            transition: background 180ms, transform 240ms;
+            transform-origin:left;
+            opacity:0;
+            transform: translateY(8px);
+        }
+
+        tbody tr.visible{
+            opacity:1;
+            transform: translateY(0);
+        }
+
+        tbody tr:hover{
+            background: rgba(255,255,255,0.02);
+            transform: translateX(4px);
+        }
+
+        .status-chip{
+            display:inline-block;
+            padding:6px 10px;
+            border-radius:999px;
+            font-size:13px;
+            font-weight:600;
+            color:#02203a;
+            background: linear-gradient(90deg,#bbf7d0,#bfdbfe);
+        }
+
+        .actions button{
+            padding:8px 10px;
+            border-radius:10px;
+            border:none;
+            cursor:pointer;
+            font-weight:600;
+            margin-right:6px;
+            transition: transform 120ms, opacity 120ms;
+        }
+
+        .actions button.edit{
+            background: rgba(96,165,250,0.12);
+            color:var(--muted);
+        }
+
+        .actions button.del{
+            background: rgba(244,67,54,0.12);
+            color: #ffd7d3;
+        }
+
+        .actions button:hover{ transform: translateY(-2px); }
+
+        /* no results */
+        .no-results{
+            text-align:center;
+            padding:18px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        /* small screens */
+        @media (max-width:780px){
+            .header-row{flex-direction:column;align-items:stretch;gap:10px;}
+            .search input{width:100%;}
+            .form-row{flex-direction:column;}
+        }
+
+        /* ====== Animations ====== */
+        @keyframes pulse {
+            0%{ transform: scale(1); opacity:1; }
+            50%{ transform: scale(1.03); opacity:0.9; }
+            100%{ transform: scale(1); opacity:1; }
+        }
+
+        .pulse {
+            animation: pulse 2.6s ease-in-out infinite;
+        }
+
+        /* loader (small) */
+        .loader {
+            width:16px;
+            height:16px;
+            border-radius:50%;
+            border:2px solid rgba(255,255,255,0.06);
+            border-top-color: var(--accent);
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Deal Management System</h2>
+
+    <!-- Hidden Admin ID -->
+    <input type="hidden" id="adminId" th:value="${adminId}" />
+
+    <!-- Form Card -->
+    <div class="card" style="margin-top:12px;">
+        <h3 style="margin-top:0;color:#e6eef8;">Create / Update Deal</h3>
+
+        <div class="form-row">
+            <div class="field">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" />
+            </div>
+            <div class="field">
+                <label for="endDate">End Date</label>
+                <input type="date" id="endDate" />
+            </div>
+            <div class="field">
+                <label for="discount">Discount (%)</label>
+                <input type="number" id="discount" step="0.01" placeholder="e.g. 10.5" />
+            </div>
+        </div>
+
+        <div class="form-row" style="align-items:flex-end;">
+            <div class="field" style="flex:2;">
+                <label for="description">Description</label>
+                <input type="text" id="description" placeholder="Short description for the deal" />
+            </div>
+
+            <div style="min-width:160px;">
+                <label style="display:block;margin-bottom:6px;color:rgba(230,238,248,0.9)">Status</label>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="status" checked />
+                    <label for="status" style="margin:0;font-size:14px;color:rgba(230,238,248,0.9)">Active</label>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+            <button id="saveBtn" class="btn" onclick="saveDeal()">
+                <span id="saveLabel">Create Deal</span>
+            </button>
+            <button class="btn secondary" onclick="resetForm()">Reset</button>
+            <div style="margin-left:auto;color:rgba(200,220,255,0.6);font-size:13px;">
+                <small>Tip: use the search box below to filter deals fast.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deals List Card -->
+    <div class="card">
+        <div class="header-row" style="align-items:center;">
+            <h3 style="margin:0;color:#e6eef8;">Deal List</h3>
+
+            <div style="display:flex;gap:12px;align-items:center;">
+                <div class="search">
+                    <div class="dot"></div>
+                    <input id="searchText" type="text" placeholder="Search description..." />
+                </div>
+                <button class="btn secondary" onclick="loadDeals()" title="Refresh list">Refresh</button>
+            </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:12px;">
+            <table id="dealTable">
+                <!-- populated by script -->
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedDealId = null;
+    let searchTimeout = null;
+
+    // gracefull fetch helper to show loader on button
+    async function safeFetch(url, opts = {}, showLoading = false) {
+        const saveBtn = document.getElementById('saveBtn');
+        const saveLabel = document.getElementById('saveLabel');
+        let loaderElem = null;
+        if (showLoading) {
+            loaderElem = document.createElement('span');
+            loaderElem.className = 'loader';
+            loaderElem.style.marginLeft = '10px';
+            saveBtn.appendChild(loaderElem);
+            saveLabel.style.opacity = '0.85';
+        }
+        try {
+            const res = await fetch(url, opts);
+            return res;
+        } finally {
+            if (showLoading) {
+                setTimeout(()=> {
+                    if (loaderElem && loaderElem.parentNode) loaderElem.remove();
+                }, 300);
+            }
+        }
+    }
+
+    async function loadDeals() {
+        const searchText = document.getElementById("searchText").value || "";
+        try{
+            const response = await fetch(`/deal-management-service/api/v1/deal/visitor/find-all?searchText=${encodeURIComponent(searchText)}&page=0&size=50`);
+            const data = await response.json();
+            const deals = data.data && data.data.dataList ? data.data.dataList : [];
+            renderTable(deals);
+        } catch(e){
+            renderTable([]);
+            console.error(e);
+        }
+    }
+
+    function renderTable(deals) {
+        const table = document.getElementById("dealTable");
+        table.innerHTML = "";
+        const thead = `<thead><tr>
+            <th style="width:55px">#</th>
+            <th>Code</th>
+            <th style="width:110px">Discount</th>
+            <th>Description</th>
+            <th style="width:120px">Status</th>
+            <th style="width:170px">Actions</th>
+        </tr></thead>`;
+        table.insertAdjacentHTML('beforeend', thead);
+
+        const tbody = document.createElement('tbody');
+        if (!deals || deals.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 6;
+            td.className = 'no-results';
+            td.innerText = 'No deals found';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            table.appendChild(tbody);
+            return;
+        }
+
+        let i = 1;
+        deals.forEach(deal => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${i++}</td>
+                <td>${deal.code || ''}</td>
+                <td>${deal.discount != null ? deal.discount : ''}</td>
+                <td>${deal.description || ''}</td>
+                <td>
+                    <span class="status-chip">${deal.status ? 'Active' : 'Inactive'}</span>
+                </td>
+                <td class="actions">
+                    <button class="edit" title="Edit" onclick="editDeal('${deal.dealId}')">Edit</button>
+                    <button class="del" title="Delete" onclick="deleteDeal('${deal.dealId}')">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            // small staggered reveal
+            setTimeout(()=> { tr.classList.add('visible'); }, 60 * i);
+        });
+
+        table.appendChild(tbody);
+    }
+
+    // Dynamic search: typing in search box updates table with debounce
+    document.getElementById("searchText").addEventListener("input", function() {
+        if(searchTimeout) clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadDeals();
+        }, 300);
+    });
+
+    async function saveDeal() {
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+        const discount = document.getElementById("discount").value;
+        const description = document.getElementById("description").value;
+        const status = document.getElementById("status").checked;
+        const adminId = document.getElementById("adminId").value;
+
+        const deal = {startDate, endDate, discount, description, status};
+
+        let url = `/deal-management-service/api/v1/deal/admin/create/${adminId}/${promoCodeId}`;
+        let method = "POST";
+
+        if (selectedDealId) {
+            url = `/deal-management-service/api/v1/deal/admin/update/${selectedDealId}`;
+            deal.id = selectedDealId;
+            method = "PUT";
+        }
+
+        try {
+            const response = await safeFetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(deal)
+            }, true);
+
+            const text = await response.text();
+            // try parse json safely
+            let data = {};
+            try { data = JSON.parse(text); } catch(e){ data = { message: text || (response.statusText) }; }
+
+            alert(data.message || 'Operation completed');
+            resetForm();
+            loadDeals();
+        } catch (e) {
+            console.error(e);
+            alert('Failed to save deal. Check console for details.');
+        }
+    }
+
+    async function editDeal(id) {
+        selectedDealId = id;
+        try{
+            const response = await fetch(`/deal-management-service/api/v1/deal/admin/find-by-id/${selectedDealId}`);
+            const resp = await response.json();
+            const deal = resp.data;
+            if (!deal) { alert('Deal data not found'); return; }
+
+            // handle possible ISO timestamps safely
+            const sDate = deal.startDate ? deal.startDate.split('T')[0] : '';
+            const eDate = deal.endDate ? deal.endDate.split('T')[0] : '';
+
+            document.getElementById("startDate").value = sDate;
+            document.getElementById("endDate").value = eDate;
+            document.getElementById("discount").value = deal.discount;
+            document.getElementById("description").value = deal.description;
+            document.getElementById("status").checked = deal.status;
+            document.getElementById("saveLabel").innerText = "Update Deal";
+            // focus first input to show edit state
+            document.getElementById("description").focus();
+        } catch(e){
+            console.error(e);
+            alert('Failed to load deal for edit.');
+        }
+    }
+
+    async function deleteDeal(id) {
+        selectedDealId = id;
+        if (!confirm("Are you sure you want to delete this deal?")) return;
+        try{
+            const response = await fetch(`/deal-management-service/api/v1/deal/admin/delete/${selectedDealId}`, {
+                method: "DELETE"
+            });
+            let result = {message:"Deal deleted"};
+            if(response.status !== 204){
+                try { result = await response.json(); } catch(e) { /* ignore */ }
+            }
+            alert(result.message || "Deleting Deal");
+            loadDeals();
+        }catch(error){
+            console.error(error);
+            alert("Failed to delete Deal");
+        }
+    }
+
+    function resetForm() {
+        selectedDealId = null;
+        document.getElementById("startDate").value = "";
+        document.getElementById("endDate").value = "";
+        document.getElementById("discount").value = "";
+        document.getElementById("description").value = "";
+        document.getElementById("status").checked = true;
+        document.getElementById("saveLabel").innerText = "Create Deal";
+    }
+
+    // initial load
+    window.onload = function() {
+        loadDeals();
+    }
+</script>
+</body>
+</html>

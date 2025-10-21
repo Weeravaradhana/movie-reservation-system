@@ -15,7 +15,7 @@ public class RequestMovieDto {
     private String description;
     private Integer duration;
     private String genre;
-    private String rating;
-    private String trailerUrl;
+    private double rating;
+    private String posterUrl;
     private String status;
 }

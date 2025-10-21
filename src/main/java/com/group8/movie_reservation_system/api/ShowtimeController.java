@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/showtimes")
+@RequestMapping("/show-time-management-service/api/v1/showtimes")
 @RequiredArgsConstructor
 public class ShowtimeController {
 
@@ -33,13 +33,13 @@ public class ShowtimeController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseShowtimeDto> getShowtimeById(@PathVariable Long id) {
-        ResponseShowtimeDto showtime = showtimeService.getAllShowTimes()
-                .stream()
+        return showtimeService.getAllShowTimes().stream()
                 .filter(s -> s.getShowtimeId().equals(id))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Showtime not found with ID: " + id));
-        return ResponseEntity.ok(showtime);
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseShowtimeDto> updateShowtime(

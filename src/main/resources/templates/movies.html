@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Movie Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+<div class="container mt-5">
+    <h1 class="text-center mb-4">🎬 Admin Dashboard - Movie Management</h1>
+
+    <!-- Add Movie Form -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">Add New Movie</div>
+        <div class="card-body">
+            <form id="addMovieForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="title" placeholder="Title" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="genre" placeholder="Genre" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control" name="duration" placeholder="Duration (min)" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" step="0.1" class="form-control" name="rating" placeholder="Rating" required>
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <textarea class="form-control" name="description" placeholder="Description" required></textarea>
+                    </div>
+                    <div class="col-md-12 mt-3">
+                        <textarea class="form-control" name="posterUrl" placeholder="posterUrl" required></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Add Movie</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Movies List -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">All Movies</div>
+        <div class="card-body">
+            <table class="table table-striped" id="moviesTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Duration</th>
+                    <th>Rating</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- JS dynamically fills here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = "http://localhost:8001/movie-management-service/api/v1/movies";
+
+    // 🔹 Load all movies
+    async function loadMovies() {
+        const res = await fetch(`${BASE_URL}/visitors/find-all?page=0&size=100`);
+        const data = await res.json();
+        const movies = data.data && data.data.dataList ? data.data.dataList : [];
+        const tbody = document.querySelector("#moviesTable tbody");
+        tbody.innerHTML = "";
+
+            movies.forEach((p,i) => {
+                console.log(p);
+                const row = `
+        <tr>
+          <td>${i+1}</td>
+          <td>${p.title}</td>
+          <td>${p.duration}</td>
+          <td>${p.rating}</td>
+          <td>${p.description}</td>
+          <td>
+
+            <button class="btn btn-sm btn-warning me-1" onclick="editMovie(${p.movieId})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMovie(${p.movieId})">Delete</button>
+          </td>
+
+        </tr>`;
+                tbody.innerHTML += row;
+            });
+
+    }
+
+    // 🔹 Add movie
+    document.getElementById("addMovieForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const movie = Object.fromEntries(formData.entries());
+
+        const res = await fetch(`${BASE_URL}/admin/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(movie)
+        });
+
+        if (res.ok) {
+            alert("✅ Movie added successfully!");
+            e.target.reset();
+            loadMovies();
+        } else {
+            alert("❌ Failed to add movie!");
+        }
+    });
+
+    // 🔹 Delete movie
+    async function deleteMovie(id) {
+        if (!confirm("Are you sure you want to delete this movie?")) return;
+
+        const res = await fetch(`${BASE_URL}/admin/${id}`, { method: "DELETE" });
+        if (res.ok) {
+            alert("🗑️ Movie deleted!");
+            loadMovies();
+        } else {
+            alert("❌ Failed to delete movie!");
+        }
+    }
+
+    // 🔹 Edit movie (simple prompt-based)
+    async function editMovie(id) {
+        const res = await fetch(`${BASE_URL}/visitor/${id}`);
+        const data = await res.json();
+        const movie = data.data;
+
+        const newTitle = prompt("Enter new title:", movie.title);
+        if (!newTitle) return;
+
+        movie.title = newTitle;
+
+        const updateRes = await fetch(`${BASE_URL}/admin/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(movie)
+        });
+
+        if (updateRes.ok) {
+            alert("✅ Movie updated successfully!");
+            loadMovies();
+        } else {
+            alert("❌ Failed to update movie!");
+        }
+    }
+
+    // Initial load
+    loadMovies();
+</script>
+
+</body>
+</html>

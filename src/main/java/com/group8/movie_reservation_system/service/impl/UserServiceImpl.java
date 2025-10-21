@@ -17,6 +17,7 @@ import com.group8.movie_reservation_system.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -181,6 +182,21 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(String id) {
         User user = userRepo.findById(id).orElseThrow(() -> new EntryNotFoundException("User not found"));
         userRepo.deleteById(user.getId());
+    }
+
+    @Override
+    public long getTotalUserCount() {
+        return 0;
+    }
+
+    @Override
+    public UserPaginateResponseDto searchUsers(String searchTerm, Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public void updateUserRole(String userId, String newRole) {
+
     }
 
     private ResponseUserDto toResponseUserDto(User user) {

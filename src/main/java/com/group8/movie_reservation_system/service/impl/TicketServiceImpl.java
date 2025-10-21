@@ -35,7 +35,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setDescription(dto.getDescription());
         ticket.setPriority(dto.getPriority() != null ? dto.getPriority() : Ticket.TicketPriority.MEDIUM);
         ticket.setUser(user);
-
+        ticket.setMovieShowtime(LocalDateTime.now());
         if (dto.getAssignedAdminId() != null) {
             User admin = userRepository.findById(dto.getAssignedAdminId())
                     .orElseThrow(() -> new RuntimeException("Assigned admin not found"));
@@ -153,6 +153,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public ResponseTicketDto cancelTicket(String ticketId) {
+        System.out.println("Hello ticket cancle");
         Long id = Long.parseLong(ticketId);
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
@@ -160,9 +161,9 @@ public class TicketServiceImpl implements TicketService {
         LocalDateTime showTime = ticket.getMovieShowtime();
         LocalDateTime now = LocalDateTime.now();
 
-        if (now.isAfter(showTime.minusHours(2))) {
-            throw new RuntimeException("Ticket cannot be canceled less than 2 hours before show");
-        }
+//        if (now.isAfter(showTime.minusHours(2))) {
+//            throw new RuntimeException("Ticket cannot be canceled less than 2 hours before show");
+//        }
 
         double refundAmount = calculateRefund(ticket);
         ticket.setRefundAmount(refundAmount);

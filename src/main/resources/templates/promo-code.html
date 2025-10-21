@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PromoCode Management</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #0f172a 0%, #071129 50%, #04111a 100%);
+            color: #eee;
+        }
+
+        h2, h3 {
+            color: #fff;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-shadow: 0 3px 8px rgba(0,0,0,0.7);
+        }
+
+        form, table {
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            max-width: 900px;
+        }
+
+        .form-container{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 45%;
+        }
+
+        input, button, select {
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 60%;
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        input:focus {
+            background: rgba(255,255,255,0.25);
+            border-color: #00c6ff;
+            box-shadow: 0 0 8px #00c6ff;
+        }
+
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, #007bff, #00c6ff);
+            color: white;
+            border-radius: 8px;
+            padding: 12px 18px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px) scale(1.05);
+            background: linear-gradient(135deg, #0056b3, #0096ff);
+        }
+
+        .save-btn-container{
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.3);
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .switch input:checked + .slider {
+            background: linear-gradient(135deg, #28a745, #00c851);
+        }
+
+        .switch input:checked + .slider:before {
+            transform: translateX(28px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #fff;
+        }
+
+        table th, table td {
+            padding: 14px;
+            text-align: center;
+        }
+
+        table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ff4b5c, #ff1e3c);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .search-container{
+            width: 100%;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .search-input {
+            width: 60%;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+        }
+
+        @media (max-width: 700px) {
+            .form-group { flex: 1 1 100%; }
+            .search-input { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+<h2>PromoCode Management</h2>
+
+<form id="promoCodeForm" onsubmit="event.preventDefault(); savePromoCode();">
+    <div class="form-container">
+        <div class="form-group">
+            <label for="code">Code:</label>
+            <input type="number" id="code" required>
+        </div>
+
+        <div class="form-group">
+            <label for="discount">Discount:</label>
+            <input type="number" step="0.01" id="discount" required>
+        </div>
+
+        <div class="form-group">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" required>
+        </div>
+
+        <div class="form-group">
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" required>
+        </div>
+
+        <div class="form-group">
+            <label>Status:</label>
+            <label class="switch">
+                <input type="checkbox" id="status" checked>
+                <span class="slider"></span>
+            </label>
+            <span id="statusLabel">Active</span>
+        </div>
+
+        <div class="save-btn-container">
+            <button type="submit">Save PromoCode</button>
+        </div>
+    </div>
+</form>
+
+<h3>All PromoCodes</h3>
+<div class="search-container">
+    <input class="search-input" type="text" id="searchText" placeholder="🔍 Search..." oninput="loadPromoCodes()" />
+</div>
+
+<table id="promoTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Code</th>
+        <th>Discount</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Admin</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+    let selectedPromoCodeId = null;
+
+    async function loadPromoCodes(){
+        const searchText = document.getElementById("searchText").value;
+        try {
+            const res = await fetch(`/deal-management-service/api/v1/promo-code/admin/find-all?searchText=${encodeURIComponent(searchText)}&page=0&size=50`);
+            const data = await res.json();
+            const tbody = document.querySelector("#promoTable tbody");
+            tbody.innerHTML = "";
+            const list = data.data?.dataList || [];
+console.log(data);
+            if(list.length === 0){
+                tbody.innerHTML = "<tr><td colspan='9'>No PromoCodes found</td></tr>";
+                return;
+            }
+
+            list.forEach((p, i) => {
+                tbody.innerHTML += `<tr>
+                <td>${i+1}</td>
+                <td>${p.code}</td>
+                <td>${p.discount}</td>
+                <td>${p.startDate ? p.startDate.substring(0,10) : ""}</td>
+                <td>${p.endDate ? p.endDate.substring(0,10) : ""}</td>
+                <td>${p.description}</td>
+                <td>${p.status ? "Active":"Inactive"}</td>
+                <td>${p.admin?.adminId || ""}</td>
+                <td>
+                    <button onclick="editPromo('${p.id}', '${p.code}', ${p.discount}, '${p.startDate}', '${p.endDate}', '${p.description}', ${p.status})">Edit</button>
+                    <button class="delete-btn" onclick="deletePromo('${p.id}')">Delete</button>
+                </td>
+            </tr>`;
+            });
+        } catch(err){
+            console.error(err);
+            alert("Failed to load promo codes.");
+        }
+    }
+
+    function editPromo(id, code, discount, startDate, endDate, description, status){
+        selectedPromoCodeId = id;
+        document.getElementById("code").value = code;
+        document.getElementById("discount").value = discount;
+        document.getElementById("startDate").value = startDate ? startDate.substring(0,10) : "";
+        document.getElementById("endDate").value = endDate ? endDate.substring(0,10) : "";
+        document.getElementById("description").value = description;
+        document.getElementById("status").checked = status;
+        document.getElementById("statusLabel").textContent = status ? "Active" : "Inactive";
+    }
+
+    async function savePromoCode(){
+        const payload = {
+            code: document.getElementById("code").value,
+            discount: parseFloat(document.getElementById("discount").value),
+            startDate: document.getElementById("startDate").value,
+            endDate: document.getElementById("endDate").value,
+            description: document.getElementById("description").value,
+            status: document.getElementById("status").checked
+        };
+
+        let url = '/deal-management-service/api/v1/promo-code/admin/create';
+        let method = 'POST';
+        if(selectedPromoCodeId){
+            url = `/deal-management-service/api/v1/promo-code/admin/update/${selectedPromoCodeId}`;
+            method = 'PUT';
+        }
+
+        try {
+            const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            const data = await res.json();
+            alert(data.message);
+            selectedPromoCodeId = null;
+            document.getElementById("promoCodeForm").reset();
+            document.getElementById("status").checked = true;
+            document.getElementById("statusLabel").textContent = "Active";
+            loadPromoCodes();
+        } catch(err){
+            console.error(err);
+            alert("Failed to save promo code.");
+        }
+    }
+
+    async function deletePromo(id){
+        if(!confirm("Are you sure to delete this promo code?")) return;
+        try {
+            await fetch(`/deal-management-service/api/v1/promo-code/admin/delete/${id}`, { method: 'DELETE' });
+            loadPromoCodes();
+        } catch(err){
+            console.error(err);
+            alert("Failed to delete promo code.");
+        }
+    }
+
+    document.getElementById("status").addEventListener("change", function() {
+        document.getElementById("statusLabel").textContent = this.checked ? "Active" : "Inactive";
+    });
+
+    window.onload = loadPromoCodes;
+</script>
+</body>
+</html>

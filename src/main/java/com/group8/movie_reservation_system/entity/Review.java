@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class Review {
 
     @Id
@@ -30,6 +31,11 @@ public class Review {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // 🔹 Movie mapping added
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "movie_id", nullable = false)
+    private Movie movie;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -42,6 +48,12 @@ public class Review {
     @Column(name = "admin_response_at")
     private LocalDateTime adminResponseAt;
 
+    public Review(String content, Integer rating, User user) {
+        this.content = content;
+        this.rating = rating;
+        this.user = user;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -53,13 +65,16 @@ public class Review {
         updatedAt = LocalDateTime.now();
     }
 
-    public Review(String content, Integer rating, User user) {
+    public Review(String content, Integer rating, User user, Movie movie) {
         this.content = content;
         this.rating = rating;
         this.user = user;
+        this.movie = movie;
     }
 
     public enum ReviewStatus {
-        PENDING, APPROVED, REJECTED
+        PENDING,
+        APPROVED,
+        REJECTED
     }
 }

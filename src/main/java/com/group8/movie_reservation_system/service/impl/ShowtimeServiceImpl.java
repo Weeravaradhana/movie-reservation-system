@@ -6,7 +6,6 @@ import com.group8.movie_reservation_system.entity.*;
 import com.group8.movie_reservation_system.exception.EntryNotFoundException;
 import com.group8.movie_reservation_system.repo.HallRepository;
 import com.group8.movie_reservation_system.repo.MovieRepository;
-import com.group8.movie_reservation_system.repo.ShowtimeRepository;
 import com.group8.movie_reservation_system.service.ShowtimeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,51 +18,62 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ShowtimeServiceImpl implements ShowtimeService {
 
-    private final ShowtimeRepository showtimeRepository;
+    private final com.group8.movie_reservation_system.repository.ShowtimeRepository showtimeRepository;
     private final MovieRepository movieRepository;
     private final SystemLogService logService;
     private final HallRepository hallRepository;
 
 
+    @Override
     public ResponseShowtimeDto createShowtime(RequestShowtimeDto dto, String adminId) {
         Movie movie = movieRepository.findById(dto.getMovieId())
                 .orElseThrow(() -> new EntryNotFoundException("Movie not found with ID: " + dto.getMovieId()));
 
-        Showtime showtime = toEntity(dto,movie);
-        Showtime saved = showtimeRepository.save(showtime);
+        Hall hall = hallRepository.findById(dto.getHallId())
+                .orElseThrow(() -> new EntryNotFoundException("Hall not found with ID: " + dto.getHallId()));
 
+        Showtime showtime = Showtime.builder()
+                .movie(movie)
+                .hall(hall)
+                .date(dto.getDate())
+                .time(dto.getTime())
+                .version(0) // 🔹 initial version assign
+                .build();
+
+        Showtime saved = showtimeRepository.save(showtime);
         logService.logAction(adminId, "Created showtime ID: " + saved.getId());
+        System.out.println(saved.getId());
         return mapToResponseDto(saved);
     }
 
+    @Override
+    public ResponseShowtimeDto updateShowtime(Long id, RequestShowtimeDto dto, String adminId) {
+        Showtime existing = showtimeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Showtime not found with ID: " + id));
+
+        Movie movie = movieRepository.findById(dto.getMovieId())
+                .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + dto.getMovieId()));
+
+        Hall hall = hallRepository.findById(dto.getHallId())
+                .orElseThrow(() -> new EntryNotFoundException("Hall not found with ID: " + dto.getHallId()));
+
+        // existing entity update කරනවා
+        existing.setMovie(movie);
+        existing.setHall(hall);
+        existing.setDate(dto.getDate());
+        existing.setTime(dto.getTime());
+
+        Showtime saved = showtimeRepository.save(existing); // version-safe save
+        logService.logAction(adminId, "Updated showtime ID: " + saved.getId());
+
+        return mapToResponseDto(saved);
+    }
 
     public List<ResponseShowtimeDto> getAllShowTimes() {
         return showtimeRepository.findAll()
                 .stream()
                 .map(this::mapToResponseDto)
                 .collect(Collectors.toList());
-    }
-
-    public ResponseShowtimeDto updateShowtime(Long id, RequestShowtimeDto dto, String adminId) {
-        Showtime updated = showtimeRepository.findById(id)
-                .map(showtime -> {
-                    Movie movie = movieRepository.findById(dto.getMovieId())
-                            .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + dto.getMovieId()));
-
-                    showtime.setMovie(movie);
-                    showtime.setHall(hallRepository
-                            .findById(dto.getHallId())
-                            .orElseThrow(() -> new EntryNotFoundException("Hall not found with ID: " + dto.getHallId())));
-                    showtime.setDate(dto.getDate());
-                    showtime.setTime(dto.getTime());
-
-                    Showtime saved = showtimeRepository.save(showtime);
-                    logService.logAction(adminId, "Updated showtime ID: " + saved.getId());
-                    return saved;
-                })
-                .orElseThrow(() -> new RuntimeException("Showtime not found with ID: " + id));
-
-        return mapToResponseDto(updated);
     }
 
 
@@ -77,6 +87,31 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     public long getShowtimeCount() {
         return showtimeRepository.count();
+    }
+
+    @Override
+    public ResponseShowtimeDto getShowtimeById(Long id) {
+        Showtime showtime = showtimeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Showtime not found with ID: " + id));
+
+        return ResponseShowtimeDto.builder()
+                .showtimeId(showtime.getId())
+                .date(showtime.getDate())
+                .time(showtime.getTime())
+                .price(showtime.getPrice())
+                .movie(ResponseMovieDto.builder()
+                        .id(showtime.getMovie().getId())
+                        .title(showtime.getMovie().getTitle())
+                        .build())
+                .hall(ResponseHallDto.builder()
+                        .hallId(showtime.getHall().getHallId())
+                        .build())
+                .build();
+    }
+
+    @Override
+    public List<ResponseShowtimeDto> getShowTimesByMovieId(Long movieId) {
+        return List.of();
     }
 
     private ResponseShowtimeDto mapToResponseDto(Showtime showtime) {
@@ -101,21 +136,27 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     private ResponseMovieDto toResponseMovieDto(Movie movie) {
         return ResponseMovieDto.builder()
-                .movieId(movie.getId())
+                .id(movie.getId())
                 .title(movie.getTitle())
                 .description(movie.getDescription())
                 .duration(movie.getDuration())
                 .genre(movie.getGenre())
                 .rating(movie.getRating())
-                .trailerUrl(movie.getTrailer_url())
+                .posterUrl(movie.getTrailer_url())
                 .status(movie.getStatus())
                 .showtime(movie.getShowtimes() != null
                         ? movie.getShowtimes().stream()
-                        .map(this::mapToResponseDto)
+                        .map(st -> ResponseShowtimeDto.builder()
+                                .showtimeId(st.getId())
+                                .date(st.getDate())
+                                .time(st.getTime())
+                                .hall(toResponseHallDto(st.getHall()))
+                                .build())
                         .collect(Collectors.toList())
                         : Collections.emptyList())
                 .build();
     }
+
 
     private ResponseHallDto toResponseHallDto(Hall hall) {
         return ResponseHallDto.builder()
@@ -179,7 +220,7 @@ public class ShowtimeServiceImpl implements ShowtimeService {
                 .duration(dto.getDuration())
                 .genre(dto.getGenre())
                 .rating(dto.getRating())
-                .trailer_url(dto.getTrailerUrl())
+                .trailer_url(dto.getPosterUrl())
                 .status(dto.getStatus())
                 .showtimes(dto.getShowtime().stream().map(this::toShowTime).collect(Collectors.toList()))
                 .build();

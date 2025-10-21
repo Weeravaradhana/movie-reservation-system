@@ -14,5 +14,8 @@ public interface UserService {
     public long getUserCount();
     public ResponseUserDto updateUser(String id, RequestUserDto updatedUser);
     public void deleteUser(String id);
+    long getTotalUserCount();
+    UserPaginateResponseDto searchUsers(String searchTerm, org.springframework.data.domain.Pageable pageable);
+    void updateUserRole(String userId, String newRole);
 
 }

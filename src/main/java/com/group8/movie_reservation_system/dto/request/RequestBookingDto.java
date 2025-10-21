@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 public class RequestBookingDto {
     private Long showtimeId;
-    private RequestUserDto user;
+    private String userId;
     private List<Integer> seatNumbers;
 
 }

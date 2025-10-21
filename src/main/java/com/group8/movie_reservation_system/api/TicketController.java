@@ -38,7 +38,7 @@ public class TicketController {
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
         String loggedUserId = (String) session.getAttribute("loggedUserId");
 
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
             ResponseTicketDto ticket = ticketService.createTicket(dto, loggedUserId);
             return successResponse(ticket);
         }
@@ -53,7 +53,7 @@ public class TicketController {
     public StandardResponseDto getTicketById(@PathVariable Long ticketId, HttpSession session) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
             ResponseTicketDto ticket = ticketService.getTicketById(ticketId);
             return successResponse(ticket);
         }
@@ -72,7 +72,7 @@ public class TicketController {
     ) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
             Pageable pageable = PageRequest.of(page, size);
             Page<ResponseTicketDto> pagedTickets = ticketService.getTicketsByUserPaged(userId, pageable);
 
@@ -93,7 +93,7 @@ public class TicketController {
     public StandardResponseDto cancelTicket(@PathVariable String ticketId, HttpSession session) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
             ResponseTicketDto ticket = ticketService.cancelTicket(ticketId);
             return successResponse(ticket);
         }
@@ -112,7 +112,7 @@ public class TicketController {
     ) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             Pageable pageable = PageRequest.of(page, size);
             Page<ResponseTicketDto> pagedTickets = ticketService.getAllTicketsPaged(pageable);
 
@@ -133,7 +133,7 @@ public class TicketController {
     public StandardResponseDto getTicketsByStatus(@PathVariable Ticket.TicketStatus status, HttpSession session) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             List<ResponseTicketDto> tickets = ticketService.getTicketsByStatus(status);
             return successResponse(tickets);
         }
@@ -150,7 +150,7 @@ public class TicketController {
     ) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseTicketDto ticket = ticketService.updateTicketStatus(ticketId, status);
             return successResponse(ticket);
         }
@@ -167,7 +167,7 @@ public class TicketController {
     ) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseTicketDto ticket = ticketService.assignTicket(ticketId, adminId);
             return successResponse(ticket);
         }
@@ -185,7 +185,7 @@ public class TicketController {
     ) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseTicketDto ticket = ticketService.updateTicketPriority(ticketId, priority);
             return successResponse(ticket);
         }
@@ -203,7 +203,7 @@ public class TicketController {
     ) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseTicketDto ticket = ticketService.addAdminResponse(ticketId, response);
             return successResponse(ticket);
         }
@@ -217,7 +217,7 @@ public class TicketController {
     public StandardResponseDto deleteTicket(@PathVariable Long ticketId, HttpSession session) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ticketService.deleteTicket(ticketId);
             return new StandardResponseDto(200, "Ticket deleted successfully", null);
         }

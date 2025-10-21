@@ -43,12 +43,12 @@ public class AdminServiceImpl implements AdminService {
             throw new BadRequestException("Email is required");
         }
 
+        System.out.println(dto.getUsername());
 
-
-                 userRepository.findByUsername(dto.getUsername())
-                .map(u->adminRepository
-                        .findById(u.getId()))
-                .orElseThrow(()-> new DuplicateEntryException("User already exists"));
+//                 userRepository.findByUsername(dto.getUsername())
+//                .map(u->adminRepository
+//                        .findById(u.getId()))
+//                .orElseThrow(()-> new DuplicateEntryException("User already exists"));
 
 
 

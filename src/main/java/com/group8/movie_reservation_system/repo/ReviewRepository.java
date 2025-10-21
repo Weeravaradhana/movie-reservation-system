@@ -1,6 +1,7 @@
 package com.group8.movie_reservation_system.repo;
 
 import com.group8.movie_reservation_system.entity.Review;
+import com.group8.movie_reservation_system.entity.Showtime;
 import com.group8.movie_reservation_system.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,5 +33,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.status = 'APPROVED'")
     Double getAverageRating();
+
+    @Query("SELECT s FROM Review s WHERE s.movie.id = :movieId")
+    List<Review> findByMovieId(@Param("movieId") Long movieId);
     
 }

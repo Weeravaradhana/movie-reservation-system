@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Seats</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .seat {
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .available { background-color: #28a745; color: white; }
+        .booked { background-color: #dc3545; color: white; cursor: not-allowed; }
+        .selected { background-color: #ffc107; color: black; }
+        .seat-container { display: flex; flex-wrap: wrap; max-width: 600px; }
+    </style>
+</head>
+<body>
+<div class="container my-5">
+    <h2 th:text="${movie.title} + ' - Select Seats'">Movie Title - Select Seats</h2>
+    <div class="seat-container" id="seatContainer"></div>
+    <hr>
+    <h4>Selected Seats: <span id="selectedSeatsCount">0</span></h4>
+    <h4>Total Price: $<span id="totalPrice">0</span></h4>
+    <button class="btn btn-primary mt-3" id="confirmBtn">Confirm Selection</button>
+</div>
+
+<script th:inline="javascript">
+    let seats = /*[[${seats}]]*/ [];
+    let showtimeId = /*[[${showtime.showtimeId}]]*/ 0; // ensure this matches ResponseShowtimeDto
+</script>
+
+<script>
+    const seatContainer = document.getElementById('seatContainer');
+    const selectedSeatsCount = document.getElementById('selectedSeatsCount');
+    const totalPrice = document.getElementById('totalPrice');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    let selectedSeats = [];
+
+    function renderSeats() {
+        seatContainer.innerHTML = '';
+        seats.forEach(seat => {
+            const seatDiv = document.createElement('div');
+            seatDiv.classList.add('seat');
+            seatDiv.textContent = seat.seatNumber;
+
+            if(seat.booked) {
+                seatDiv.classList.add('booked');
+            } else {
+                seatDiv.classList.add('available');
+                seatDiv.addEventListener('click', () => toggleSeatSelection(seat, seatDiv));
+            }
+
+            seatContainer.appendChild(seatDiv);
+        });
+    }
+
+    function toggleSeatSelection(seat, element) {
+        const index = selectedSeats.findIndex(s => s.seatId === seat.seatId);
+        if(index > -1) {
+            selectedSeats.splice(index, 1);
+            element.classList.remove('selected');
+            element.classList.add('available');
+        } else {
+            selectedSeats.push(seat);
+            element.classList.remove('available');
+            element.classList.add('selected');
+        }
+        updateSummary();
+    }
+
+    function updateSummary() {
+        selectedSeatsCount.textContent = selectedSeats.length;
+        const total = selectedSeats.reduce((sum, seat) => sum + parseFloat(seat.price), 0);
+        totalPrice.textContent = total.toFixed(2);
+    }
+
+    confirmBtn.addEventListener('click', () => {
+        if(selectedSeats.length === 0) {
+            alert('Please select at least one seat!');
+            return;
+        }
+
+        const seatSelectionPayload = selectedSeats.map(seat => ({
+            seatId: seat.seatId
+        }));
+
+        fetch(`/seat-management-service/api/v1/seats/api/confirm-seats/${showtimeId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(seatSelectionPayload) // ✅ direct array
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || 'Seats booked successfully!');
+                selectedSeats.forEach(s => s.booked = true);
+                selectedSeats = [];
+                updateSummary();
+                renderSeats();
+            })
+            .catch(err => console.error(err));
+    });
+
+    renderSeats();
+</script>
+</body>
+</html>

@@ -14,14 +14,13 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ResponseMovieDto {
-    private Long movieId;
+    private Long id;
     private String title;
     private String description;
     private Integer duration;
     private String genre;
-    private String rating;
-    private String trailerUrl;
+    private double rating;
+    private String posterUrl;
     private String status;
-
     private List<ResponseShowtimeDto> showtime;
 }

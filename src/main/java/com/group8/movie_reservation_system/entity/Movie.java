@@ -15,17 +15,24 @@ import java.util.List;
 @Setter
 @Builder
 public class Movie {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "movie_id")
     private Long id;
 
     private String title;
+
     @Column(columnDefinition = "nvarchar(max)")
     private String description;
+
     private Integer duration;
     private String genre;
-    private String rating;
+    private double rating;
+
+    @Column(columnDefinition = "VARCHAR(MAX)")
     private String trailer_url;
+
     private String status = "ACTIVE";
 
     @OneToMany(mappedBy = "movie")

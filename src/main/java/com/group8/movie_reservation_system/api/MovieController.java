@@ -61,6 +61,7 @@ public class MovieController {
 
     @GetMapping("/visitor/{id}")
     public ResponseEntity<StandardResponseDto> getMovieById(@PathVariable Long id) {
+
         ResponseMovieDto movie = movieService.getMovieById(id);
         return ResponseEntity.ok(
                 new StandardResponseDto(200, "Movie retrieved successfully", movie)

@@ -24,7 +24,8 @@ public class AdminController {
             @RequestBody RequestAdminDto dto,
             HttpSession  session
     ) {
-
+        System.out.println("createAdmin");
+        System.out.println(session.getAttribute("loggedUserRole"));
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
         String loggedUserId = (String) session.getAttribute("loggedUserId");
         if (loggedUserRole == null) {

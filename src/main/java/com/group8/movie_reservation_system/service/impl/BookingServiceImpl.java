@@ -9,10 +9,11 @@ import com.group8.movie_reservation_system.entity.*;
 import com.group8.movie_reservation_system.exception.EntryNotFoundException;
 import com.group8.movie_reservation_system.repo.BookingRepository;
 import com.group8.movie_reservation_system.repo.SeatRepository;
-import com.group8.movie_reservation_system.repo.ShowtimeRepository;
+import com.group8.movie_reservation_system.repo.UserRepository;
 import com.group8.movie_reservation_system.service.BookingService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,8 @@ public class BookingServiceImpl implements BookingService {
 
     private final SeatRepository seatRepo;
     private final BookingRepository bookingRepo;
-    private final ShowtimeRepository showtimeRepo;
+    private final com.group8.movie_reservation_system.repository.ShowtimeRepository showtimeRepo;
+    private final UserRepository userRepo;
 
     // ===== CREATE BOOKING =====
     @Override
@@ -55,8 +57,9 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
+        User user = userRepo.findById(dto.getUserId()).orElseThrow(() -> new EntryNotFoundException("User not found"));
         Booking booking = new Booking();
-        booking.setUser(toUserEntity(dto.getUser()));
+        booking.setUser(user);
         booking.setShowtime(showtime);
         booking.setTimestamp(LocalDateTime.now());
         booking.setStatus("CONFIRMED");
@@ -149,6 +152,31 @@ public class BookingServiceImpl implements BookingService {
         return mapToResponseBookingDto(booking);
     }
 
+    @Override
+    public double getTotalRevenue() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalBookingCount() {
+        return 0;
+    }
+
+    @Override
+    public ResponseBookingDto confirmBooking(Long bookingId) {
+        return null;
+    }
+
+    @Override
+    public long getBookingCountByUserId(String userId) {
+        return 0;
+    }
+
+    @Override
+    public Object getBookingsByUserId(String userId, PageRequest of) {
+        return null;
+    }
+
     private ResponseBookingDto mapToResponseBookingDto(Booking booking) {
 
         ResponseShowtimeDto showtimeDto = ResponseShowtimeDto.builder()
@@ -191,13 +219,13 @@ public class BookingServiceImpl implements BookingService {
         if (movie == null) return null;
 
         return ResponseMovieDto.builder()
-                .movieId(movie.getId())
+                .id(movie.getId())
                 .title(movie.getTitle())
                 .description(movie.getDescription())
                 .duration(movie.getDuration())
                 .genre(movie.getGenre())
                 .rating(movie.getRating())
-                .trailerUrl(movie.getTrailer_url())
+                .posterUrl(movie.getTrailer_url())
                 .status(movie.getStatus())
                 .build();
     }

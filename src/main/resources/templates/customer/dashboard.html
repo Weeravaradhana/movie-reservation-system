@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - MovieReserve</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Dashboard Content -->
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-user-circle fa-4x text-primary"></i>
+                            <h5 class="mt-2" th:text="${session.loggedUserEmail}">user@example.com</h5>
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                        <hr>
+                        <ul class="nav nav-pills flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#bookings" data-bs-toggle="tab">
+                                    <i class="fas fa-ticket-alt me-2"></i>My Bookings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#profile" data-bs-toggle="tab">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#history" data-bs-toggle="tab">
+                                    <i class="fas fa-history me-2"></i>Booking History
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h2 class="card-title">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Welcome Back!
+                                </h2>
+                                <p class="card-text">Manage your movie bookings and explore new releases.</p>
+                                <a th:href="@{/movies}" class="btn btn-light">
+                                    <i class="fas fa-film me-2"></i>Browse Movies
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- My Bookings Tab -->
+                    <div class="tab-pane fade show active" id="bookings">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-ticket-alt me-2"></i>Current Bookings
+                                </h5>
+                                <span class="badge bg-primary" th:text="${bookings != null ? bookings.size() : 0}">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${bookings != null}">
+                                    <div class="row" th:each="booking : ${bookings}">
+                                        <div class="col-12 mb-3">
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-8">
+                                                            <h6 class="card-title mb-1" th:text="${booking.movieTitle}">Movie Title</h6>
+                                                            <p class="text-muted mb-1">
+                                                                <i class="fas fa-calendar me-1"></i>
+                                                                <span th:text="${booking.showtime}">2024-01-15 19:30</span>
+                                                            </p>
+                                                            <p class="text-muted mb-1">
+                                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                                <span th:text="${booking.hallName}">Hall A</span>
+                                                            </p>
+                                                            <p class="text-muted mb-0">
+                                                                <i class="fas fa-chair me-1"></i>
+                                                                <span th:text="${booking.seats}">A1, A2</span>
+                                                            </p>
+                                                        </div>
+                                                        <div class="col-md-4 text-end">
+                                                            <div class="mb-2">
+                                                                <span class="badge" 
+                                                                      th:classappend="${booking.status == 'CONFIRMED'} ? 'bg-success' : 'bg-warning'"
+                                                                      th:text="${booking.status}">CONFIRMED</span>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <strong th:text="'$' + ${booking.totalPrice}">$25.98</strong>
+                                                            </div>
+                                                            <div class="btn-group" role="group">
+                                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                                        th:onclick="'viewBooking(' + ${booking.id} + ')'">
+                                                                    <i class="fas fa-eye me-1"></i>View
+                                                                </button>
+                                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                                        th:onclick="'cancelBooking(' + ${booking.id} + ')'"
+                                                                        th:if="${booking.status == 'CONFIRMED'}">
+                                                                    <i class="fas fa-times me-1"></i>Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div th:if="${bookings == null}" class="text-center py-5">
+                                    <i class="fas fa-ticket-alt fa-4x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Current Bookings</h5>
+                                    <p class="text-muted">You don't have any active bookings at the moment.</p>
+                                    <a th:href="@{/movies}" class="btn btn-primary">
+                                        <i class="fas fa-film me-2"></i>Browse Movies
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Tab -->
+                    <div class="tab-pane fade" id="profile">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user me-2"></i>Profile Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{/customer/profile/update}" method="post">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="email" 
+                                                   th:value="${session.loggedUserEmail}" readonly>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="role" class="form-label">Role</label>
+                                            <input type="text" class="form-control" id="role" 
+                                                   th:value="${session.loggedUserRole}" readonly>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Update Profile
+                                    </button>
+                            </form>
+                        </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Booking History Tab -->
+                    <div class="tab-pane fade" id="history">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-history me-2"></i>Booking History
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Movie</th>
+                                                <th>Date</th>
+                                                <th>Seats</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="history : ${bookingHistory}">
+                                                <td th:text="${history.movieTitle}">Movie Title</td>
+                                                <td th:text="${history.bookingDate}">2024-01-15</td>
+                                                <td th:text="${history.seats}">A1, A2</td>
+                                                <td th:text="'$' + ${history.totalPrice}">$25.98</td>
+                                                <td>
+                                                    <span class="badge" 
+                                                          th:classappend="${history.status == 'CONFIRMED'} ? 'bg-success' : 'bg-secondary'"
+                                                          th:text="${history.status}">CONFIRMED</span>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                            th:onclick="'viewBooking(' + ${history.id} + ')'">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div th:if="${bookingHistory == null}" class="text-center py-4">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Booking History</h5>
+                                    <p class="text-muted">Your booking history will appear here.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Include Footer -->
+<!--    <div th:replace="fragments/footer :: footer"></div>-->
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/app.js}"></script>
+    
+    <script>
+        function viewBooking(bookingId) {
+            // Implement view booking functionality
+            console.log('View booking:', bookingId);
+            // You can redirect to a booking details page or show a modal
+        }
+        
+        function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel this booking?')) {
+                // Implement cancel booking functionality
+                fetch('/booking-management-service/api/v1/bookings/cancel/' + bookingId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        alert('Booking cancelled successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error cancelling booking: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error cancelling booking');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ticket Management</title>
+
+    <style>
+        /* ---------- Basic layout & theme (inline) ---------- */
+        :root {
+            --bg:#0f1724; --card:#0b1220; --muted:#9aa4b2; --accent:#60a5fa;
+            --success:#10b981; --danger:#ef4444; --glass: rgba(255,255,255,0.03);
+            --radius:12px; --pad:14px;
+        }
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#071019, #061326);color:#e6eef8}
+        .container{max-width:1100px;margin:28px auto;padding:20px}
+        header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+        header h1{font-size:20px;margin:0}
+        .card{background:var(--card);border-radius:var(--radius);padding:var(--pad);box-shadow: 0 6px 18px rgba(2,6,23,0.6);margin-bottom:16px}
+        .muted{color:var(--muted);font-size:13px}
+        .row{display:flex;gap:12px}
+        .col{flex:1}
+        form .form-row{display:flex;gap:10px;margin-bottom:10px}
+        label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+        input[type="text"], select, textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;resize:vertical}
+        button{padding:10px 12px;border-radius:10px;border:0;cursor:pointer;background:var(--accent);color:#03223a}
+        button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);text-align:left;font-size:13px}
+        .pill{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px}
+        .status-OPEN{background:rgba(96,165,250,0.12);color:var(--accent)}
+        .status-RESOLVED{background:rgba(16,185,129,0.12);color:var(--success)}
+        .status-CANCELLED{background:rgba(239,68,68,0.08);color:var(--danger)}
+        .small{font-size:12px;color:var(--muted)}
+        .controls{display:flex;gap:8px;flex-wrap:wrap}
+        .hidden{display:none}
+        footer{margin-top:18px;text-align:center;color:var(--muted);font-size:12px}
+        .inline-form{display:inline-flex;gap:8px;align-items:center}
+        .msg{padding:8px;border-radius:8px;margin-top:8px}
+        .msg.ok{background:rgba(16,185,129,0.08);color:var(--success)}
+        .msg.err{background:rgba(239,68,68,0.06);color:var(--danger)}
+        @media (max-width:900px){ .row{flex-direction:column} table th,table td{font-size:12px} }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <h1>Ticket Management</h1>
+            <div class="muted">Manage support tickets — create, view, cancel (user) and admin actions.</div>
+        </div>
+        <div class="small">
+            <!-- inject session info into header -->
+            Role: <strong th:text="${loggedUserRole}">ANONYMOUS</strong><br/>
+            UserId: <span th:text="${loggedUserId}">-</span>
+        </div>
+    </header>
+
+    <!-- Create ticket card -->
+    <section class="card">
+        <h3>Create Ticket</h3>
+        <form id="createTicketForm">
+            <div class="form-row">
+                <div style="flex:2">
+                    <label for="title">Title</label>
+                    <input id="title" name="title" type="text" placeholder="Short summary (e.g., Payment failed)" required>
+                </div>
+                <div style="flex:1">
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority" required>
+                        <option value="LOW">LOW</option>
+                        <option value="MEDIUM" selected>MEDIUM</option>
+                        <option value="HIGH">HIGH</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom:10px">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3" placeholder="Describe the issue..."></textarea>
+            </div>
+
+            <!-- assignedAdminId only useful if admin creating or choosing assignment -->
+            <div style="margin-bottom:10px">
+                <label for="assignedAdminId">Assign Admin (optional, admin-only)</label>
+                <input id="assignedAdminId" name="assignedAdminId" type="text" placeholder="admin-id if assigning">
+            </div>
+
+            <div class="controls">
+                <button type="submit">Create Ticket</button>
+                <button type="button" id="btnClear" class="ghost">Clear</button>
+                <div id="createResult" class="small"></div>
+            </div>
+        </form>
+    </section>
+
+    <!-- User ticket actions -->
+    <section class="card">
+        <h3>Your Tickets</h3>
+        <div class="row" style="align-items:flex-end">
+            <div class="col">
+                <label for="userPageSize">Page & size</label>
+                <div class="inline-form">
+                    <input id="userPage" type="number" value="0" min="0" style="width:70px">
+                    <input id="userSize" type="number" value="10" min="1" style="width:70px">
+                    <button id="btnLoadMyTickets" class="ghost">Load</button>
+                </div>
+                <div id="userTicketsMsg" class="small muted">Load tickets for your account</div>
+            </div>
+
+            <div class="col" style="max-width:360px">
+                <label for="getTicketId">Get single ticket by ID</label>
+                <div class="inline-form">
+                    <input id="getTicketId" type="text" placeholder="ticket id">
+                    <button id="btnGetTicket" class="ghost">Get</button>
+                    <button id="btnCancelTicket" class="ghost">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="userTicketsArea">
+            <table id="userTicketsTable" class="hidden">
+                <thead>
+                <tr>
+                    <th>ID</th><th>Title</th><th>Priority</th><th>Status</th><th>Assigned Admin</th><th>Created At</th><th>Actions</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+            <div id="singleTicketView" class="hidden card" style="margin-top:12px">
+                <strong id="singleTicketTitle"></strong>
+                <div class="small muted" id="singleTicketMeta"></div>
+                <p id="singleTicketDesc" class="small"></p>
+                <div id="singleTicketAdminResponse" class="small muted"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Admin panel (visible only to ADMIN) -->
+    <section id="adminPanel" class="card hidden">
+        <h3>Admin Panel</h3>
+
+        <div class="row">
+            <div class="col">
+                <label>All tickets (paged)</label>
+                <div class="inline-form">
+                    <input id="adminPage" type="number" value="0" min="0" style="width:70px">
+                    <input id="adminSize" type="number" value="10" min="1" style="width:70px">
+                    <button id="btnLoadAllTickets" class="ghost">Load</button>
+                </div>
+            </div>
+
+            <div style="width:300px">
+                <label>Filter by status</label>
+                <div class="inline-form">
+                    <select id="adminFilterStatus">
+                        <option value="">-- all --</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="RESOLVED">RESOLVED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                    <button id="btnFilterStatus" class="ghost">Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <table id="adminTicketsTable" class="hidden">
+            <thead><tr><th>ID</th><th>Title</th><th>User</th><th>Priority</th><th>Status</th><th>Assigned</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+        </table>
+
+        <div id="adminActionArea" class="hidden card" style="margin-top:12px">
+            <h4>Ticket Admin Actions</h4>
+            <div class="form-row">
+                <input id="adminTicketId" placeholder="ticket id" type="text">
+                <select id="adminStatusSelect">
+                    <option value="OPEN">OPEN</option><option value="RESOLVED">RESOLVED</option><option value="CANCELLED">CANCELLED</option>
+                </select>
+                <button id="btnUpdateStatus" class="ghost">Update Status</button>
+            </div>
+
+            <div class="form-row">
+                <input id="adminAssignAdminId" placeholder="admin id to assign" type="text">
+                <button id="btnAssignTicket" class="ghost">Assign</button>
+            </div>
+
+            <div class="form-row">
+                <select id="adminPrioritySelect">
+                    <option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option>
+                </select>
+                <button id="btnUpdatePriority" class="ghost">Update Priority</button>
+            </div>
+
+            <div style="margin-top:8px">
+                <label>Admin response</label>
+                <div class="form-row">
+                    <input id="adminResponseText" placeholder="response text" type="text" style="flex:1">
+                    <button id="btnAddResponse" class="ghost">Add Response</button>
+                </div>
+            </div>
+
+            <div style="margin-top:8px">
+                <button id="btnDeleteTicket" class="ghost">Delete Ticket</button>
+            </div>
+
+            <div id="adminActionMsg" class="small muted"></div>
+        </div>
+    </section>
+
+    <footer class="muted">This UI communicates with REST endpoints under <code>/ticket-management-service/api/v1/tickets</code></footer>
+</div>
+
+<!-- inject server session variables as JS constants -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const LOGGED_ROLE = /*[[${loggedUserRole}]]*/ 'ANONYMOUS';
+    const LOGGED_USER_ID = /*[[${loggedUserId}]]*/ '';
+    /*]]>*/
+</script>
+
+<script>
+    // Base API path (unchanged from your controller)
+    const BASE = '/ticket-management-service/api/v1/tickets';
+
+    // Always include credentials so the server-side HttpSession cookie is sent
+    const fetchOptionsBase = { credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } };
+
+    // DOM shortcuts
+    const createForm = document.getElementById('createTicketForm');
+    const createResult = document.getElementById('createResult');
+    const btnClear = document.getElementById('btnClear');
+
+    const btnLoadMyTickets = document.getElementById('btnLoadMyTickets');
+    const userTicketsTable = document.getElementById('userTicketsTable');
+    const userTicketsTbody = userTicketsTable.querySelector('tbody');
+    const userPageInput = document.getElementById('userPage');
+    const userSizeInput = document.getElementById('userSize');
+
+    const btnGetTicket = document.getElementById('btnGetTicket');
+    const btnCancelTicket = document.getElementById('btnCancelTicket');
+    const getTicketId = document.getElementById('getTicketId');
+    const singleTicketView = document.getElementById('singleTicketView');
+
+    const adminPanel = document.getElementById('adminPanel');
+    const btnLoadAllTickets = document.getElementById('btnLoadAllTickets');
+    const adminTicketsTable = document.getElementById('adminTicketsTable');
+    const adminTicketsTbody = adminTicketsTable.querySelector('tbody');
+    const adminPageInput = document.getElementById('adminPage');
+    const adminSizeInput = document.getElementById('adminSize');
+    const adminFilterStatus = document.getElementById('adminFilterStatus');
+    const btnFilterStatus = document.getElementById('btnFilterStatus');
+
+    const adminActionArea = document.getElementById('adminActionArea');
+    const adminTicketId = document.getElementById('adminTicketId');
+    const adminStatusSelect = document.getElementById('adminStatusSelect');
+    const btnUpdateStatus = document.getElementById('btnUpdateStatus');
+    const adminAssignAdminId = document.getElementById('adminAssignAdminId');
+    const btnAssignTicket = document.getElementById('btnAssignTicket');
+    const adminPrioritySelect = document.getElementById('adminPrioritySelect');
+    const btnUpdatePriority = document.getElementById('btnUpdatePriority');
+    const adminResponseText = document.getElementById('adminResponseText');
+    const btnAddResponse = document.getElementById('btnAddResponse');
+    const btnDeleteTicket = document.getElementById('btnDeleteTicket');
+    const adminActionMsg = document.getElementById('adminActionMsg');
+
+    // Show admin panel if role is ADMIN
+    if (LOGGED_ROLE === 'ADMIN') {
+        adminPanel.classList.remove('hidden');
+    }
+
+    // Create ticket
+    createForm.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        createResult.textContent = '';
+        const payload = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            priority: document.getElementById('priority').value,
+            assignedAdminId: document.getElementById('assignedAdminId').value || null
+        };
+
+        try {
+            const res = await fetch(`${BASE}/user/create/`, {
+                method: 'POST',
+                ...fetchOptionsBase,
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (res.ok && json.code === 200) {
+                createResult.className = 'small msg ok';
+                createResult.textContent = 'Created ticket id: ' + (json.data && json.data.id ? json.data.id : '(unknown)');
+                // optionally reload user tickets
+                loadUserTickets();
+                createForm.reset();
+            } else {
+                createResult.className = 'small msg err';
+                createResult.textContent = json.message || 'Error creating ticket';
+            }
+        } catch (err) {
+            createResult.className = 'small msg err';
+            createResult.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    btnClear.addEventListener('click', () => createForm.reset());
+
+    // Load user tickets (paged)
+    async function loadUserTickets() {
+        const page = Number(userPageInput.value || 0);
+        const size = Number(userSizeInput.value || 10);
+        // assume logged user id is LOGGED_USER_ID
+        if (!LOGGED_USER_ID) {
+            document.getElementById('userTicketsMsg').textContent = 'No logged user id present in session.';
+            return;
+        }
+        try {
+            const res = await fetch(`${BASE}/user/${encodeURIComponent(LOGGED_USER_ID)}/paged?page=${page}&size=${size}`, {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            const json = await res.json();
+            if (res.ok && json.code === 200) {
+                const dataList = (json.data && json.data.dataList) ? json.data.dataList : [];
+                populateUserTicketsTable(dataList);
+                document.getElementById('userTicketsMsg').textContent = `Loaded ${dataList.length} tickets (page ${page})`;
+            } else {
+                document.getElementById('userTicketsMsg').textContent = json.message || 'Could not load tickets';
+            }
+        } catch (err) {
+            document.getElementById('userTicketsMsg').textContent = 'Network error: ' + err.message;
+        }
+    }
+
+    function populateUserTicketsTable(list) {
+        userTicketsTbody.innerHTML = '';
+        if (!list || list.length === 0) {
+            userTicketsTable.classList.add('hidden');
+            return;
+        }
+        userTicketsTable.classList.remove('hidden');
+        list.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+          <td>${t.id ?? ''}</td>
+          <td>${t.title ?? ''}</td>
+          <td>${t.priority ?? ''}</td>
+          <td><span class="pill status-${t.status ?? 'OPEN'}">${t.status ?? ''}</span></td>
+          <td>${t.assignedAdminUsername ?? t.assignedAdminId ?? '-'}</td>
+          <td>${t.createdAt ? (new Date(t.createdAt)).toLocaleString() : ''}</td>
+          <td>
+            <div class="controls">
+              <button class="ghost" data-action="view" data-id="${t.id}">View</button>
+              <button class="ghost" data-action="cancel" data-id="${t.id}">Cancel</button>
+            </div>
+          </td>
+        `;
+            userTicketsTbody.appendChild(tr);
+        });
+
+        // attach listeners
+        userTicketsTbody.querySelectorAll('button[data-action="view"]').forEach(b => {
+            b.addEventListener('click', () => fetchTicketById(b.dataset.id));
+        });
+        userTicketsTbody.querySelectorAll('button[data-action="cancel"]').forEach(b => {
+            b.addEventListener('click', () => cancelTicket(b.dataset.id));
+        });
+    }
+
+    btnLoadMyTickets.addEventListener('click', (e) => { e.preventDefault(); loadUserTickets(); });
+
+    // Get single ticket by id
+    btnGetTicket.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = getTicketId.value.trim();
+        if (!id) return alert('Enter ticket id');
+        fetchTicketById(id);
+    });
+
+    async function fetchTicketById(id) {
+        try {
+            const res = await fetch(`${BASE}/user/${encodeURIComponent(id)}`, { method: 'GET', credentials: 'same-origin' });
+            const json = await res.json();
+            if (res.ok && json.code === 200) {
+                showSingleTicket(json.data);
+            } else {
+                alert(json.message || 'Ticket not found or unauthorized');
+            }
+        } catch (err) {
+            alert('Network error: ' + err.message);
+        }
+    }
+
+    function showSingleTicket(t) {
+        singleTicketView.classList.remove('hidden');
+        document.getElementById('singleTicketTitle').textContent = `#${t.id} — ${t.title}`;
+        document.getElementById('singleTicketMeta').textContent = `Status: ${t.status} • Priority: ${t.priority} • User: ${t.username || t.userId} • Assigned: ${t.assignedAdminUsername || t.assignedAdminId || '-'}`;
+        document.getElementById('singleTicketDesc').textContent = t.description || '';
+        document.getElementById('singleTicketAdminResponse').textContent = t.adminResponse ? `Admin response: ${t.adminResponse} (at ${t.adminResponseAt || ''})` : '';
+    }
+
+    // Cancel ticket (user)
+    btnCancelTicket.addEventListener('click', async () => {
+        const id = getTicketId.value.trim();
+        if (!id) return alert('Enter ticket id to cancel');
+        if (!confirm('Cancel ticket ' + id + '?')) return;
+        await cancelTicket(id);
+    });
+
+    async function cancelTicket(id) {
+        try {
+            const res = await fetch(`${BASE}/user/${encodeURIComponent(id)}/cancel`, {
+                method: 'PUT',
+                ...fetchOptionsBase
+            });
+            const json = await res.json();
+            if (res.ok && json.code === 200) {
+                alert('Ticket cancelled: ' + id);
+                loadUserTickets();
+            } else {
+                alert(json.message || 'Could not cancel');
+            }
+        } catch (err) {
+            alert('Network error: ' + err.message);
+        }
+    }
+
+    // ---------------- Admin flows ----------------
+    btnLoadAllTickets.addEventListener('click', (e) => { e.preventDefault(); loadAllTickets(); });
+
+    async function loadAllTickets() {
+        const p = Number(adminPageInput.value || 0);
+        const s = Number(adminSizeInput.value || 10);
+        try {
+            const res = await fetch(`${BASE}/admin/all/paged?page=${p}&size=${s}`, { method: 'GET', credentials: 'same-origin' });
+            const json = await res.json();
+            if (res.ok && json.code === 200) {
+                const list = (json.data && json.data.dataList) ? json.data.dataList : [];
+                populateAdminTable(list);
+            } else {
+                adminActionMsg.textContent = json.message || 'Could not load all tickets';
+            }
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    }
+
+    function populateAdminTable(list) {
+        adminTicketsTbody.innerHTML = '';
+        if (!list || list.length === 0) {
+            adminTicketsTable.classList.add('hidden');
+            return;
+        }
+        adminTicketsTable.classList.remove('hidden');
+        list.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+          <td>${t.id}</td>
+          <td>${t.title}</td>
+          <td>${t.username || t.userId || ''}</td>
+          <td>${t.priority}</td>
+          <td><span class="pill status-${t.status}">${t.status}</span></td>
+          <td>${t.assignedAdminUsername || t.assignedAdminId || '-'}</td>
+          <td>
+            <div class="controls">
+              <button class="ghost" data-a="select" data-id="${t.id}">Select</button>
+              <button class="ghost" data-a="view" data-id="${t.id}">View</button>
+            </div>
+          </td>
+        `;
+            adminTicketsTbody.appendChild(tr);
+        });
+
+        adminTicketsTbody.querySelectorAll('button[data-a="select"]').forEach(b => {
+            b.addEventListener('click', () => {
+                adminActionArea.classList.remove('hidden');
+                adminTicketId.value = b.dataset.id;
+            });
+        });
+        adminTicketsTbody.querySelectorAll('button[data-a="view"]').forEach(b => {
+            b.addEventListener('click', () => fetchTicketById(b.dataset.id));
+        });
+    }
+
+    btnFilterStatus.addEventListener('click', async () => {
+        const status = adminFilterStatus.value;
+        if (!status) return loadAllTickets();
+        try {
+            const res = await fetch(`${BASE}/admin/status/${encodeURIComponent(status)}`, { method: 'GET', credentials: 'same-origin' });
+            const json = await res.json();
+            if (res.ok && json.code === 200) {
+                populateAdminTable(json.data || []);
+            } else {
+                adminActionMsg.textContent = json.message || 'Could not filter';
+            }
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    // admin update status
+    btnUpdateStatus.addEventListener('click', async () => {
+        const id = adminTicketId.value.trim(); if (!id) return alert('select ticket id');
+        const status = adminStatusSelect.value;
+        try {
+            const res = await fetch(`${BASE}/admin/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`, {
+                method: 'PUT',
+                credentials: 'same-origin'
+            });
+            const json = await res.json();
+            adminActionMsg.textContent = json.message || (json.code === 200 ? 'Status updated' : 'Failed');
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    // assign ticket
+    btnAssignTicket.addEventListener('click', async () => {
+        const id = adminTicketId.value.trim(); if (!id) return alert('select ticket id');
+        const adminId = adminAssignAdminId.value.trim(); if (!adminId) return alert('enter admin id');
+        try {
+            const res = await fetch(`${BASE}/admin/${encodeURIComponent(id)}/assign/${encodeURIComponent(adminId)}`, {
+                method: 'PUT', credentials: 'same-origin'
+            });
+            const json = await res.json();
+            adminActionMsg.textContent = json.message || (json.code === 200 ? 'Assigned' : 'Failed');
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    // update priority
+    btnUpdatePriority.addEventListener('click', async () => {
+        const id = adminTicketId.value.trim(); if (!id) return alert('select ticket id');
+        const priority = adminPrioritySelect.value;
+        try {
+            const res = await fetch(`${BASE}/admin/${encodeURIComponent(id)}/priority?priority=${encodeURIComponent(priority)}`, {
+                method: 'PUT', credentials: 'same-origin'
+            });
+            const json = await res.json();
+            adminActionMsg.textContent = json.message || (json.code === 200 ? 'Priority updated' : 'Failed');
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    // add admin response
+    btnAddResponse.addEventListener('click', async () => {
+        const id = adminTicketId.value.trim(); if (!id) return alert('select ticket id');
+        const responseText = adminResponseText.value.trim(); if (!responseText) return alert('enter response text');
+        try {
+            const res = await fetch(`${BASE}/admin/${encodeURIComponent(id)}/response?response=${encodeURIComponent(responseText)}`, {
+                method: 'PUT', credentials: 'same-origin'
+            });
+            const json = await res.json();
+            adminActionMsg.textContent = json.message || (json.code === 200 ? 'Response added' : 'Failed');
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    // delete
+    btnDeleteTicket.addEventListener('click', async () => {
+        const id = adminTicketId.value.trim(); if (!id) return alert('select ticket id');
+        if (!confirm('Delete ticket ' + id + '? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`${BASE}/admin/${encodeURIComponent(id)}`, {
+                method: 'DELETE', credentials: 'same-origin'
+            });
+            const json = await res.json();
+            adminActionMsg.textContent = json.message || (json.code === 200 ? 'Deleted' : 'Failed');
+        } catch (err) {
+            adminActionMsg.textContent = 'Network error: ' + err.message;
+        }
+    });
+
+    // initial load: if user is logged load tickets; if admin, show admin area defaults
+    (function init() {
+        if (LOGGED_ROLE === 'USER' || LOGGED_ROLE === 'ADMIN') {
+            loadUserTickets();
+        }
+        if (LOGGED_ROLE === 'ADMIN') {
+            loadAllTickets();
+        }
+    })();
+
+</script>
+</body>
+</html>

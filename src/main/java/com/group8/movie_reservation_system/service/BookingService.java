@@ -5,7 +5,7 @@ import com.group8.movie_reservation_system.dto.request.RequestBookingDto;
 import com.group8.movie_reservation_system.dto.response.ResponseBookingDto;
 import com.group8.movie_reservation_system.dto.response.paginate.AvailablePaginateResponseDto;
 import com.group8.movie_reservation_system.dto.response.paginate.BookingPaginateResponseDto;
-
+import org.springframework.data.domain.PageRequest;
 
 
 public interface BookingService {
@@ -19,4 +19,14 @@ public interface BookingService {
     AvailablePaginateResponseDto getAvailableSeats(int page, int suze , Long showtimeId);
 
     ResponseBookingDto updateBooking(RequestBookingDto dto ,Long bookingId);
+
+    double getTotalRevenue();
+
+    long getTotalBookingCount();
+
+    ResponseBookingDto confirmBooking(Long bookingId);
+    long getBookingCountByUserId(String userId);
+
+
+    Object getBookingsByUserId(String userId, PageRequest of);
 }

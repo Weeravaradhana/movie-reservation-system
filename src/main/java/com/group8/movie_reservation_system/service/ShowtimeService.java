@@ -12,4 +12,6 @@ public interface ShowtimeService{
     ResponseShowtimeDto updateShowtime(Long id, RequestShowtimeDto dto, String adminId);
     void deleteShowtime(Long id, String adminId);
     long getShowtimeCount();
+    public ResponseShowtimeDto getShowtimeById(Long id);
+    public List<ResponseShowtimeDto> getShowTimesByMovieId(Long movieId);
 }

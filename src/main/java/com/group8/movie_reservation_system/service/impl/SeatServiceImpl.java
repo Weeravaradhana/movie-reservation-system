@@ -1,12 +1,10 @@
 package com.group8.movie_reservation_system.service.impl;
 
-import com.group8.movie_reservation_system.dto.request.RequestHallDto;
+import com.group8.movie_reservation_system.dto.request.RequestSeatSelectionDto;
 import com.group8.movie_reservation_system.dto.response.ResponseHallDto;
+import com.group8.movie_reservation_system.dto.response.ResponseMovieDto;
 import com.group8.movie_reservation_system.dto.response.ResponseSeatDto;
-import com.group8.movie_reservation_system.entity.Deal;
-import com.group8.movie_reservation_system.entity.Hall;
-import com.group8.movie_reservation_system.entity.Seat;
-import com.group8.movie_reservation_system.entity.SeatAllocation;
+import com.group8.movie_reservation_system.entity.*;
 import com.group8.movie_reservation_system.exception.DuplicateEntryException;
 import com.group8.movie_reservation_system.exception.EntryNotFoundException;
 import com.group8.movie_reservation_system.repo.*;
@@ -20,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
+import java.util.Optional;
 
 
 @Service
@@ -32,6 +30,8 @@ public class SeatServiceImpl implements SeatService {
     private final SeatRepository seatRepository;
     private final SeatAllocationRepository seatAllocationRepository;
     private final DealRepo dealRepo;
+    private final MovieRepository movieRepository;
+    private final com.group8.movie_reservation_system.repository.ShowtimeRepository showtimeRepository;
 
     @PostConstruct
     public void initializeHalls() {
@@ -91,6 +91,42 @@ public class SeatServiceImpl implements SeatService {
         }
     }
 
+    public List<Seat> getSeatsByHallId(Long hallId) {
+        return seatRepository.findByHallId(hallId);
+    }
+
+    @Transactional
+    public void bookSeats(List<Long> seatIds) {
+        for(Long seatId : seatIds) {
+            Seat seat = seatRepository.findById(seatId)
+                    .orElseThrow(() -> new RuntimeException("Seat not found: " + seatId));
+            if(!seat.isBooked()) {
+                seat.setBooked(true); // booked=false → true
+                seat.setStatus("Booked"); // optional
+                seatRepository.save(seat);
+            } else {
+                throw new RuntimeException("Seat already booked: " + seat.getSeatNumber());
+            }
+        }
+    }
+
+    @Override
+    public ResponseMovieDto getMovieById(Long movieId) {
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new EntryNotFoundException("Movie not found with ID: " + movieId));
+
+        return ResponseMovieDto.builder()
+                .title(movie.getTitle())
+                .description(movie.getDescription())
+                .duration(movie.getDuration())
+                .genre(movie.getGenre())
+                .rating(movie.getRating())
+                .posterUrl(movie.getTrailer_url())
+                .build();
+    }
+
+
+
     @Override
     public void initializeSeats(Hall hall) {
         List<Seat> seats = new ArrayList<>();
@@ -101,7 +137,7 @@ public class SeatServiceImpl implements SeatService {
         // Box seats
         for (int i = 1; i <= boxSeats; i++) {
             seats.add(new Seat(hall, "BX" + i, (i % 2 == 0) ? "Couple" : "Normal",
-                    "box", "box", "available", 0, i, BigDecimal.valueOf(25.0)));
+                    "box", "box", false, 0, i, BigDecimal.valueOf(25.0)));
         }
 
         // Standard seats
@@ -117,7 +153,7 @@ public class SeatServiceImpl implements SeatService {
                 String seatNumber = layout.substring(0, 1).toUpperCase() + seatCounter;
                 String type = (i % 10 == 0) ? "Couple" : "Normal";
                 seats.add(new Seat(hall, seatNumber, type, "standard", layout,
-                        "available", i / 10, i, price));
+                        false, i / 10, i, price));
                 seatCounter++;
             }
         }
@@ -199,15 +235,6 @@ public class SeatServiceImpl implements SeatService {
         return seatAllocationRepository.save(allocation);
     }
 
-
-
-    @Override
-    public ResponseHallDto getDefaultHallForShowtime(Long showtimeId) {
-        return hallRepository.findAll().stream().map(this::toResponseHallDto)
-                .findFirst()
-                .orElseThrow(()-> new EntryNotFoundException("hall not found"));
-    }
-
     @Override
     public ResponseSeatDto getSeatById(Long seatId) {
         return seatRepository.findById(seatId).map(this::toResponseSeatDto)
@@ -218,6 +245,46 @@ public class SeatServiceImpl implements SeatService {
     public ResponseHallDto getHallById(Long hallId) {
         return hallRepository.findById(hallId).map(this::toResponseHallDto)
                 .orElseThrow(() -> new EntryNotFoundException("Hall not found with ID: " + hallId));
+    }
+
+    @Override
+    public ResponseHallDto getDefaultHall(Long showtimeId) {
+        return null;
+    }
+
+    @Override
+    public List<ResponseSeatDto> getAllSeats() {
+
+        return seatRepository.findAll().stream().map(this::toResponseSeatDto).toList();
+    }
+
+
+    @Override
+    public ResponseHallDto getDefaultHallForShowtime(Long showtimeId) {
+        // 1️⃣ Find showtime
+        Showtime showtime = showtimeRepository.findById(showtimeId)
+                .orElseThrow(() -> new RuntimeException("Showtime not found"));
+
+        Hall hall = showtime.getHall(); // Get the hall associated with the showtime
+
+        // 2️⃣ Map seats to ResponseSeatDto
+        List<ResponseSeatDto> seatDtos = hall.getSeats().stream()
+                .map(seat -> ResponseSeatDto.builder()
+                        .seatId(seat.getSeatId())
+                        .seatNumber(seat.getSeatNumber())
+                        .status(isSeatBookedForShowtime(seat.getSeatId(), showtimeId) ? "occupied" : "available")
+                        .price(seat.getPrice())
+                        .build())
+                .toList();
+
+        // 3️⃣ Build ResponseHallDto
+        return ResponseHallDto.builder()
+                .hallId(hall.getHallId())
+                .name(hall.getName())
+                .capacity(hall.getCapacity())
+                .type(hall.getType())
+                .seats(seatDtos)
+                .build();
     }
 
     private ResponseSeatDto toResponseSeatDto(Seat seat) {
@@ -251,6 +318,49 @@ public class SeatServiceImpl implements SeatService {
                 .orElse(null);
     }
 
+    @Override
+    @Transactional
+    public BigDecimal bookSeats(Long showtimeId, List<RequestSeatSelectionDto> selectedSeats) {
 
+        Showtime showtime = showtimeRepository.findById(showtimeId)
+                .orElseThrow(() -> new RuntimeException("Showtime not found with id: " + showtimeId));
+
+        // Create a new Booking for this seat selection
+        Booking booking = new Booking();
+        booking.setShowtime(showtime);
+        // You can set other booking details like user, timestamp etc. if needed
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (RequestSeatSelectionDto seatDto : selectedSeats) {
+            Seat seat = seatRepository.findById(seatDto.getSeatId())
+                    .orElseThrow(() -> new RuntimeException("Seat not found with id: " + seatDto.getSeatId()));
+
+            if (seat.isBooked()) {
+                throw new DuplicateEntryException("Seat " + seat.getSeatNumber() + " is already booked.");
+            }
+
+            seat.setBooked(true);
+            seat.setBooking(booking);
+            seatRepository.save(seat);
+
+            totalPrice = totalPrice.add(seat.getPrice());
+        }
+
+        // Optional service fee
+        BigDecimal serviceFee = BigDecimal.valueOf(2.00);
+        totalPrice = totalPrice.add(serviceFee);
+
+        return totalPrice;
+    }
+
+    @Override
+    public List<Seat> getSeatsByShowtime(Long showtimeId) {
+        Optional<Showtime> optionalShowtime = showtimeRepository.findById(showtimeId);
+        if (optionalShowtime.isEmpty()) {
+            throw new RuntimeException("Showtime not found with id: " + showtimeId);
+        }
+        return seatRepository.findByHallId(optionalShowtime.get().getHall().getHallId());
+    }
 
 }
