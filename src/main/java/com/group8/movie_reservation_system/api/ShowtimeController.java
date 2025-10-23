@@ -25,7 +25,7 @@ public class ShowtimeController {
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-    @GetMapping
+    @GetMapping("/find-all")
     public ResponseEntity<List<ResponseShowtimeDto>> getAllShowtimes() {
         List<ResponseShowtimeDto> showtimes = showtimeService.getAllShowTimes();
         return ResponseEntity.ok(showtimes);

@@ -6,7 +6,7 @@
     <title>Ticket Management</title>
 
     <style>
-        /* ---------- Basic layout & theme (inline) ---------- */
+
         :root {
             --bg:#0f1724; --card:#0b1220; --muted:#9aa4b2; --accent:#60a5fa;
             --success:#10b981; --danger:#ef4444; --glass: rgba(255,255,255,0.03);
@@ -43,6 +43,23 @@
     </style>
 </head>
 <body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">MovieReserve</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/booking/movie/1}">Movies</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/signup}">Sign Up</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/login}">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
 <div class="container">
     <header>
         <div>
@@ -50,7 +67,7 @@
             <div class="muted">Manage support tickets — create, view, cancel (user) and admin actions.</div>
         </div>
         <div class="small">
-            <!-- inject session info into header -->
+
             Role: <strong th:text="${loggedUserRole}">ANONYMOUS</strong><br/>
             UserId: <span th:text="${loggedUserId}">-</span>
         </div>
@@ -94,7 +111,7 @@
         </form>
     </section>
 
-    <!-- User ticket actions -->
+
     <section class="card">
         <h3>Your Tickets</h3>
         <div class="row" style="align-items:flex-end">
@@ -425,7 +442,7 @@
         }
     }
 
-    // ---------------- Admin flows ----------------
+
     btnLoadAllTickets.addEventListener('click', (e) => { e.preventDefault(); loadAllTickets(); });
 
     async function loadAllTickets() {

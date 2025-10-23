@@ -6,11 +6,12 @@ import com.group8.movie_reservation_system.dto.response.paginate.ReviewPaginateR
 import com.group8.movie_reservation_system.entity.Review;
 import com.group8.movie_reservation_system.entity.User;
 
+import java.util.List;
 
 
 public interface ReviewService {
 
-    void saveReview(RequestReviewDto dto);
+    void saveReview(RequestReviewDto dto,String id);
     ResponseReviewDto findById(Long id);
     ReviewPaginateResponseDto findByUser(String userId, int page, int pageSize);
     ReviewPaginateResponseDto findByUserOrderByCreatedAtDesc(User user, int page, int pageSize);
@@ -23,4 +24,5 @@ public interface ReviewService {
     long countByStatus(Review.ReviewStatus status);
     Double getAverageRating();
     void deleteReview(Long id);
+    List<Review> findAll();
 }

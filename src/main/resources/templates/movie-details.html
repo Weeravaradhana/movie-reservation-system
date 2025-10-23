@@ -9,94 +9,124 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        a { text-decoration: none; }
+
+        nav.navbar { background-color: #1f1f1f; border-bottom: 1px solid #333; }
+        nav.navbar .nav-link { color: #e0e0e0 !important; transition: color 0.3s; }
+        nav.navbar .nav-link:hover { color: #dc3545 !important; }
+
+        footer { background-color: #1f1f1f; padding: 30px 0; border-top: 1px solid #333; color: #aaa; }
+        footer a { color: #dc3545; transition: color 0.3s; }
+        footer a:hover { color: #ff6b6b; }
+
+        .card { background-color: #1e1e1e; border: none; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); transition: transform 0.3s, box-shadow 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.7); }
+        .card-header { background-color: #2c2c2c; border-bottom: 1px solid #333; font-weight: 600; }
+        .btn-primary { background-color: #dc3545; border: none; transition: all 0.3s; }
+        .btn-primary:hover { background-color: #b02a37; transform: translateY(-2px); }
+        .btn-outline-secondary { color: #e0e0e0; border-color: #555; }
+        .btn-outline-secondary:hover { background-color: #333; color: #fff; border-color: #777; }
+
+        #moviePoster { border-radius: 12px 12px 0 0; transition: transform 0.4s, opacity 0.6s; }
+        #moviePoster:hover { transform: scale(1.02); }
+
+        .fade-in { opacity: 0; animation: fadeIn 0.8s forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .badge.bg-warning { background-color: #ffc107 !important; color: #121212 !important; }
+        .placeholder { display: flex; justify-content: center; align-items: center; height: 500px; background-color: #2c2c2c; border-radius: 12px 12px 0 0; }
+
+        .review-card { background-color: #2a2a2a; padding: 12px; border-radius: 10px; margin-bottom: 12px; opacity: 0; animation: fadeIn 0.6s forwards; }
+        .review-card:nth-child(1) { animation-delay: 0.1s; }
+        .review-card:nth-child(2) { animation-delay: 0.2s; }
+        .review-card:nth-child(3) { animation-delay: 0.3s; }
+
+        h3, h4, h5, h6 { color: #fff; }
+
+        .form-control, .form-select { background-color: #1e1e1e; color: #e0e0e0; border: 1px solid #444; }
+        .form-control:focus, .form-select:focus { border-color: #dc3545; box-shadow: 0 0 10px rgba(220,53,69,0.5); background-color: #1e1e1e; color: #fff; }
+    </style>
 </head>
 <body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">MovieReserve</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/booking/movie/1}">Movies</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/signup}">Sign Up</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/login}">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
 <div class="container py-5">
     <div class="row">
-        <!-- Movie Poster and Basic Info -->
         <div class="col-lg-4 mb-4">
-            <div class="card">
-                <img id="moviePoster" src="/images/default-movie.jpg" alt="Movie Poster" class="card-img-top" style="height: 500px; object-fit: cover;">
+            <div class="card fade-in">
+                <div class="placeholder" id="posterPlaceholder"><i class="fas fa-spinner fa-spin fa-3x text-white"></i></div>
+                <img id="moviePoster" src="/images/default-movie.jpg" alt="Movie Poster" class="card-img-top fade-in" style="height: 500px; object-fit: cover;">
                 <div class="card-body text-center">
                     <h3 id="movieTitle">Movie Title</h3>
                     <div class="mb-3">
-                        <span class="badge bg-warning text-dark me-2">
-                            <i class="fas fa-star me-1"></i>
-                            <span id="movieRating">4.5</span>
-                        </span>
+                        <span class="badge bg-warning text-dark me-2"><i class="fas fa-star me-1"></i><span id="movieRating">4.5</span></span>
                         <span class="badge bg-primary" id="movieGenre">Action</span>
                     </div>
                     <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">
-                            <i class="fas fa-clock me-1"></i>
-                            <span id="movieDuration">120 min</span>
-                        </span>
+                        <span class="text-muted"><i class="fas fa-clock me-1"></i><span id="movieDuration">120 min</span></span>
                     </div>
                     <div class="d-grid gap-2">
-                        <a id="bookNowBtn" href="#" class="btn btn-primary btn-lg">
-                            <i class="fas fa-ticket-alt me-2"></i>Book Now
-                        </a>
-                        <a href="/movies" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Movies
-                        </a>
+                        <a id="bookNowBtn" href="#" class="btn btn-primary btn-lg"><i class="fas fa-ticket-alt me-2"></i>Book Now</a>
+                        <a href="/movies" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Movies</a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Movie Information -->
         <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Movie Information</h4>
-                </div>
+            <div class="card mb-4 fade-in">
+                <div class="card-header"><h4 class="mb-0">Movie Information</h4></div>
                 <div class="card-body">
                     <h5>Description</h5>
                     <p class="text-muted" id="movieDescription">Movie description goes here...</p>
                     <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-film me-2"></i>Genre</h6>
-                            <p id="movieGenreInfo">Action, Drama</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-clock me-2"></i>Duration</h6>
-                            <p id="movieDurationInfo">120 minutes</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-star me-2"></i>Rating</h6>
-                            <p id="movieRatingInfo">4.5/5</p>
-                        </div>
+                        <div class="col-md-6"><h6><i class="fas fa-film me-2"></i>Genre</h6><p id="movieGenreInfo">Action, Drama</p></div>
+                        <div class="col-md-6"><h6><i class="fas fa-clock me-2"></i>Duration</h6><p id="movieDurationInfo">120 minutes</p></div>
+                        <div class="col-md-6"><h6><i class="fas fa-star me-2"></i>Rating</h6><p id="movieRatingInfo">4.5/5</p></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Showtimes -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-calendar-alt me-2"></i>Available Showtimes</h5>
-                </div>
-                <div class="card-body" id="showtimesContainer">
-                    <p class="text-muted">Loading showtimes...</p>
-                </div>
+            <div class="card mb-4 fade-in">
+                <div class="card-header"><h5><i class="fas fa-calendar-alt me-2"></i>Available Showtimes</h5></div>
+                <div class="card-body" id="showtimesContainer"><p class="text-muted">Loading showtimes...</p></div>
             </div>
 
-            <!-- Reviews -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-comments me-2"></i>Reviews</h5>
-                </div>
-                <div class="card-body" id="reviewsContainer">
-                    <p class="text-muted">Loading reviews...</p>
-                </div>
+            <div class="card mb-4 fade-in">
+                <div class="card-header"><h5><i class="fas fa-comments me-2"></i>Reviews</h5></div>
+                <div class="card-body" id="reviewsContainer"><p class="text-muted">Loading reviews...</p></div>
             </div>
 
-            <!-- Add Review Form -->
-            <div class="card mb-4" id="addReviewCard">
+            <div class="card mb-4 fade-in" id="addReviewCard">
                 <div class="card-body">
                     <h6>Write a Review</h6>
                     <form id="reviewForm">
+                        <div class="mb-3">
+                            <input style="display: none" type="text" th:value="${movieId}" class="form-control" id="movieId" readonly>
+                        </div>
                         <div class="mb-3">
                             <label for="rating" class="form-label">Rating</label>
                             <select class="form-select" id="rating" name="rating" required>
@@ -112,9 +142,7 @@
                             <label for="comment" class="form-label">Comment</label>
                             <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane me-2"></i>Submit Review
-                        </button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-2"></i>Submit Review</button>
                     </form>
                 </div>
             </div>
@@ -123,20 +151,32 @@
     </div>
 </div>
 
-<!-- Bootstrap JS -->
+<footer>
+    <div class="container text-center">
+        <p>&copy; 2025 MovieReserve. All rights reserved.</p>
+        <div class="mt-2">
+            <a href="#"><i class="fab fa-facebook fa-lg me-3"></i></a>
+            <a href="#"><i class="fab fa-twitter fa-lg me-3"></i></a>
+            <a href="#"><i class="fab fa-instagram fa-lg me-3"></i></a>
+        </div>
+    </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     const movieId = window.location.pathname.split("/").pop();
-    const apiBase = "/movie-details-management-service/api/v1/movies";
+    const apiBase = "/review-management-service/api/v1/reviews";
+    const reviewsContainer = document.getElementById('reviewsContainer');
+    const posterImg = document.getElementById('moviePoster');
+    const placeholder = document.getElementById('posterPlaceholder');
 
     // Fetch Movie Details
-    fetch(`${apiBase}/${movieId}`)
+    fetch(`/movie-details-management-service/api/v1/movies/${movieId}`)
         .then(res => res.json())
         .then(movie => {
-            document.getElementById('moviePoster').src = movie.posterUrl && movie.posterUrl.trim() !== ''
-                ? movie.posterUrl
-                : '/images/default-movie.jpg';
+            posterImg.src = movie.posterUrl && movie.posterUrl.trim() !== '' ? movie.posterUrl : '/images/default-movie.jpg';
+            posterImg.onload = () => placeholder.style.display = 'none';
             document.getElementById('movieTitle').textContent = movie.title;
             document.getElementById('movieDescription').textContent = movie.description;
             document.getElementById('movieGenre').textContent = movie.genre;
@@ -144,12 +184,12 @@
             document.getElementById('movieDuration').textContent = movie.duration + ' min';
             document.getElementById('movieDurationInfo').textContent = movie.duration + ' min';
             document.getElementById('movieRating').textContent = movie.rating;
-            document.getElementById('movieRatingInfo').textContent = movie.rating;
+            document.getElementById('movieRatingInfo').textContent = movie.rating + '/5';
             document.getElementById('bookNowBtn').href = `/booking/movie/${movie.id}`;
         });
 
     // Fetch Showtimes
-    fetch(`${apiBase}/${movieId}/showtimes`)
+    fetch(`/movie-details-management-service/api/v1/movies/${movieId}/showtimes`)
         .then(res => res.json())
         .then(showtimes => {
             const container = document.getElementById('showtimesContainer');
@@ -158,79 +198,129 @@
                 return;
             }
             container.innerHTML = '';
-            showtimes.forEach(s => {
+            showtimes.forEach((s, index) => {
                 const div = document.createElement('div');
-                div.className = 'card mb-2';
+                div.className = 'card mb-2 fade-in';
+                div.style.animationDelay = `${index * 0.1}s`;
                 div.innerHTML = `
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6>${s.date}</h6>
-                        <p class="text-muted mb-0">${s.time}</p>
-                    </div>
-                    <div class="text-end">
-                        <p class="text-muted mb-1">${s.hall.hallName}</p>
-                        <a href="/booking/showtime/${s.showtimeId}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-ticket-alt me-1"></i>Book
-                        </a>
-                    </div>
-                </div>`;
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h6>${s.date}</h6>
+                <p class="text-muted mb-0">${s.time}</p>
+            </div>
+            <div class="text-end">
+                <p class="text-muted mb-1">${s.hall.hallName}</p>
+                <a href="/booking/showtime/${s.showtimeId}" class="btn btn-primary btn-sm"><i class="fas fa-ticket-alt me-1"></i>Book</a>
+            </div>
+        </div>`;
                 container.appendChild(div);
             });
         });
 
-    // Fetch Reviews
-    fetch(`${apiBase}/${movieId}/reviews`)
-        .then(res => res.json())
-        .then(reviews => {
-            const container = document.getElementById('reviewsContainer');
+    // --- REVIEW MANAGEMENT ---
+    async function loadReviews() {
+        reviewsContainer.innerHTML = '<p class="text-muted">Loading reviews...</p>';
+        try {
+            const res = await fetch(`${apiBase}/movie/${movieId}`);
+            const data = await res.json();
+            const reviews = data.data || [];
             if(reviews.length === 0){
-                container.innerHTML = '<p class="text-muted">No reviews yet.</p>';
+                reviewsContainer.innerHTML = '<p class="text-muted">No reviews yet.</p>';
                 return;
             }
-            container.innerHTML = '';
-            reviews.forEach(r => {
+            reviewsContainer.innerHTML = '';
+            reviews.forEach((r, index) => {
                 const div = document.createElement('div');
-                div.className = 'mb-3';
-                div.innerHTML = `
-                <div class="d-flex align-items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-user-circle fa-2x text-muted"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="mb-0">${r.userName}</h6>
-                            <div>
-                                <span class="badge bg-warning text-dark">${r.rating}/5</span>
-                            </div>
-                        </div>
-                        <p class="text-muted small">${new Date(r.createdAt).toLocaleDateString()}</p>
-                        <p>${r.content}</p>
-                    </div>
-                </div>
-                <hr>`;
-                container.appendChild(div);
-            });
-        });
+                div.className = 'review-card';
+                div.style.animationDelay = `${index*0.1}s`;
 
-    // Submit Review Form
-    document.getElementById('reviewForm').addEventListener('submit', e => {
+                let adminControls = '';
+                if(r.userRole === 'ADMIN'){
+                    adminControls = `
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-success me-2" onclick="approveReview(${r.id})">Approve</button>
+                        <button class="btn btn-sm btn-danger me-2" onclick="rejectReview(${r.id})">Reject</button>
+                        <button class="btn btn-sm btn-primary" onclick="replyReview(${r.id})">Reply</button>
+                    </div>`;
+                }
+
+                div.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="flex-shrink-0"><i class="fas fa-user-circle fa-2x text-muted"></i></div>
+                <div class="flex-grow-1 ms-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="mb-0">${r.userName}</h6>
+                        <div><span class="badge bg-warning text-dark">${r.rating}/5</span></div>
+                    </div>
+                    <p class="text-muted small">${new Date(r.createdAt).toLocaleDateString()}</p>
+                    <p>${r.content}</p>
+                    ${r.adminReply ? `<p class="text-info"><strong>Admin Reply:</strong> ${r.adminReply}</p>` : ''}
+                    ${adminControls}
+                </div>
+            </div>`;
+                reviewsContainer.appendChild(div);
+            });
+        } catch(err){
+            console.error(err);
+            reviewsContainer.innerHTML = '<p class="text-danger">Failed to load reviews.</p>';
+        }
+    }
+
+    document.getElementById('reviewForm').addEventListener('submit', async e => {
         e.preventDefault();
         const rating = document.getElementById('rating').value;
         const comment = document.getElementById('comment').value;
-
-        fetch(`${apiBase}/${movieId}/reviews`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rating: parseInt(rating), content: comment })
-        })
-            .then(res => res.json())
-            .then(data => {
-                alert('Review submitted!');
+        const movieId = document.getElementById('movieId').value;
+        try {
+            const res = await fetch(`${apiBase}`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ movieId: parseInt(movieId), rating: parseInt(rating), content: comment })
+            });
+            const data = await res.json();
+            if(data.code === 200){
+                alert('Review submitted successfully!');
                 document.getElementById('reviewForm').reset();
-                location.reload();
-            })
-            .catch(err => console.error(err));
+                loadReviews();
+            } else alert('Failed to submit review: ' + data.message);
+        } catch(err){ console.error(err); alert('Error submitting review.'); }
     });
+
+    async function approveReview(reviewId){
+        const adminResponse = prompt('Enter approval comment (optional):','');
+        if(adminResponse === null) return;
+        try{
+            const res = await fetch(`${apiBase}/${reviewId}/approve?adminResponse=${encodeURIComponent(adminResponse)}`, { method: 'PUT' });
+            const data = await res.json();
+            if(data.code === 200) loadReviews();
+            else alert('Failed to approve review: ' + data.message);
+        } catch(err){ console.error(err); alert('Error approving review'); }
+    }
+
+    async function rejectReview(reviewId){
+        const adminResponse = prompt('Enter rejection reason:','');
+        if(adminResponse === null) return;
+        try{
+            const res = await fetch(`${apiBase}/${reviewId}/reject?adminResponse=${encodeURIComponent(adminResponse)}`, { method: 'PUT' });
+            const data = await res.json();
+            if(data.code === 200) loadReviews();
+            else alert('Failed to reject review: ' + data.message);
+        } catch(err){ console.error(err); alert('Error rejecting review'); }
+    }
+
+    async function replyReview(reviewId){
+        const reply = prompt('Enter your reply:','');
+        if(reply === null || reply.trim() === '') return;
+        try{
+            const res = await fetch(`${apiBase}/${reviewId}/reply?adminResponse=${encodeURIComponent(reply)}`, { method: 'PUT' });
+            const data = await res.json();
+            if(data.code === 200) loadReviews();
+            else alert('Failed to reply: ' + data.message);
+        } catch(err){ console.error(err); alert('Error replying to review'); }
+    }
+
+    loadReviews();
 </script>
+
 </body>
 </html>

@@ -16,16 +16,16 @@ public class Seat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long seatId;
 
-    private String seatNumber;  // e.g., "BX1"
-    private int rowNum;         // numeric row
-    private int colNum;         // numeric column for layout
-    private String type;        // e.g., "Regular", "VIP"
-    private String category;    // e.g., "Adult", "Child", "Senior"
-    private String layout;      // e.g., "A", "B" row layout
+    private String seatNumber;
+    private int rowNum;
+    private int colNum;
+    private String type;
+    private String category;
+    private String layout;
     private BigDecimal price;
     private String status;
     @Column(nullable = false)
-    private boolean booked;     // true if booked, false otherwise
+    private boolean booked;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hall_id")

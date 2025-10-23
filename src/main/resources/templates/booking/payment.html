@@ -1,65 +1,162 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment - MovieReserve</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .payment-card { background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; max-width: 600px; margin: 50px auto; }
+        h3 { color: #dc3545; font-weight: 700; text-align: center; margin-bottom: 20px; }
+        label { font-weight: 500; color: #333; }
+        .form-control:focus { border-color: #dc3545; box-shadow: 0 0 4px rgba(220, 53, 69, 0.4); }
+        .btn-pay { background-color: #dc3545; border: none; font-weight: 600; transition: all 0.3s ease; }
+        .btn-pay:hover { background-color: #ff4c5b; transform: scale(1.05); }
+        .payment-icon { font-size: 2rem; color: #dc3545; }
+        .amount-display { background-color: #f1f1f1; border-radius: 10px; padding: 15px; text-align: center; margin-bottom: 20px; font-size: 1.3rem; font-weight: 600; color: #333; }
+        #discountInfo { display: block; margin-top: 5px; font-weight: 500; }
+    </style>
 </head>
+
 <body>
-<div class="container py-5">
-    <h3>Payment</h3>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">MovieReserve</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/booking/movie/1}">Movies</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/signup}">Sign Up</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/login}">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="payment-card">
+        <div class="text-center mb-4">
+            <i class="fa-solid fa-credit-card payment-icon"></i>
+            <h3>Payment</h3>
+        </div>
 
-    <p>Booking for Movie ID: <span th:text="${movieId}"></span></p>
+        <p class="text-center">Booking for Movie ID: <span id="movieIdDisplay"></span></p>
 
-    <form id="paymentForm">
-        <div class="mb-3">
-            <label>Card Number</label>
-            <input type="text" class="form-control" id="cardNumber" required>
+        <div class="amount-display">
+            Total Amount: $<span id="amountDisplay">0.00</span>
         </div>
-        <div class="mb-3">
-            <label>Expiry Date</label>
-            <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY" required>
-        </div>
-        <div class="mb-3">
-            <label>CVV</label>
-            <input type="text" class="form-control" id="cvv" required>
-        </div>
-        <div class="mb-3">
-            <label>Cardholder Name</label>
-            <input type="text" class="form-control" id="cardName" required>
-        </div>
-        <div class="mb-3">
-            <label>Payment Method</label><br>
-            <input type="radio" name="paymentMethod" value="credit" checked> Credit
-            <input type="radio" name="paymentMethod" value="debit"> Debit
-            <input type="radio" name="paymentMethod" value="paypal"> PayPal
-        </div>
-        <button type="submit" class="btn btn-primary">Pay Now</button>
-    </form>
+
+        <form id="paymentForm">
+            <div class="mb-3">
+                <label>Booked Movie ID</label>
+                <input type="text" class="form-control" id="movieId" readonly>
+            </div>
+
+            <div class="mb-3">
+                <label>Promo Code</label>
+                <input type="text" class="form-control" id="promoCode" readonly placeholder="Fetching...">
+                <small id="discountInfo" class="text-success"></small>
+            </div>
+
+            <div class="mb-3">
+                <label>Cardholder Name</label>
+                <input type="text" class="form-control" id="cardHolderName" placeholder="John Doe" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Card Number</label>
+                <input type="number" class="form-control" id="cardNumber" placeholder="1234567812345678" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Expiry Date</label>
+                <input type="month" class="form-control" id="expiryDate" required>
+            </div>
+
+            <div class="mb-3">
+                <label>Payment Method</label>
+                <select class="form-select" id="method" required>
+                    <option value="Credit">Credit Card</option>
+                    <option value="Debit">Debit Card</option>
+                    <option value="PayPal">PayPal</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-pay w-100 py-2 mt-3">Pay Now <i class="fa-solid fa-lock ms-2"></i></button>
+        </form>
+    </div>
 </div>
 
-<script th:inline="javascript">
-    const movieId = [[${movieId}]];
+<script>
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    const movieId = getQueryParam('movieId');
+    const showtimeId = getQueryParam('showtimeId');
+    const bookingId = getQueryParam('bookingId');
+    const totalAmount = parseFloat(getQueryParam('total') || '0');
+
+    document.getElementById('movieIdDisplay').textContent = movieId;
+    document.getElementById('movieId').value = movieId;
+
+    let discountedTotal = totalAmount;
+
+    async function fetchRandomPromoCode() {
+        try {
+            const res = await fetch('/deal-management-service/api/v1/promo-code/admin/find-all?searchText=&page=0&size=100');
+            const result = await res.json();
+            console.log(result);
+
+            if(res.ok && result.data && result.data.dataList && result.data.dataList.length > 0) {
+                const dataList = result.data.dataList;
+                const randomPromo = dataList[Math.floor(Math.random() * dataList.length)];
+
+                document.getElementById('promoCode').value = randomPromo.code;
+                document.getElementById('discountInfo').textContent = `Discount: ${randomPromo.discount}%`;
+
+                discountedTotal = (totalAmount * (1 - randomPromo.discount / 100)).toFixed(2);
+            } else {
+                document.getElementById('promoCode').placeholder = "No promo codes available";
+                document.getElementById('discountInfo').textContent = "";
+                discountedTotal = totalAmount;
+            }
+
+            document.getElementById('amountDisplay').textContent = discountedTotal;
+        } catch(err) {
+            console.error(err);
+            document.getElementById('promoCode').placeholder = "Error fetching promo code";
+            discountedTotal = totalAmount;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchRandomPromoCode);
 
     document.getElementById('paymentForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        const cardHolderName = document.getElementById('cardHolderName').value;
         const cardNumber = document.getElementById('cardNumber').value;
-        const expiryDate = document.getElementById('expiryDate').value;
-        const cvv = document.getElementById('cvv').value;
-        const cardName = document.getElementById('cardName').value;
-        const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+        const rawExpiry = document.getElementById('expiryDate').value;
+        const expiryDate = rawExpiry ? rawExpiry + '-01' : null;
+        const method = document.getElementById('method').value;
 
         const paymentRequest = {
-            bookingId: null, // no pre-existing booking
-            movieId: movieId,
-            amount: 20.00,
+            bookingId: bookingId,
+            showtimeId:showtimeId,
+            movieId:movieId,
+            amount: parseFloat(discountedTotal),
             method: method,
-            cardNumber: cardNumber,
+            cardNumber: Number(cardNumber),
             expiryDate: expiryDate,
-            cvv: cvv,
-            cardName: cardName
+            cardHolderName: cardHolderName
         };
 
         try {
@@ -74,9 +171,9 @@
 
             if (response.ok) {
                 alert('Payment Successful for Movie ID: ' + movieId);
-                window.location.href = `/booking/success?movieId=${movieId}`;
+                window.location.href = `/booking/success?movieId=${movieId}&showtimeId=${showtimeId}`;
             } else {
-                alert('Payment Failed: ' + result.message);
+                alert('Payment Failed: ' + (result.message || 'Please try again'));
             }
         } catch (err) {
             console.error(err);

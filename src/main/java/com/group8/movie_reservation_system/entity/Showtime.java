@@ -39,7 +39,7 @@ public class Showtime {
     @Column(name = "time")
     private LocalTime time;
 
-    @OneToMany(mappedBy = "showtime")
+    @OneToMany(mappedBy = "showtime",cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonIgnore
     private List<Booking> bookings = new ArrayList<>();
 

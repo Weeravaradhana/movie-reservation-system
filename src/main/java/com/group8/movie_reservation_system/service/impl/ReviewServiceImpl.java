@@ -3,9 +3,11 @@ package com.group8.movie_reservation_system.service.impl;
 import com.group8.movie_reservation_system.dto.request.RequestReviewDto;
 import com.group8.movie_reservation_system.dto.response.ResponseReviewDto;
 import com.group8.movie_reservation_system.dto.response.paginate.ReviewPaginateResponseDto;
+import com.group8.movie_reservation_system.entity.Movie;
 import com.group8.movie_reservation_system.entity.Review;
 import com.group8.movie_reservation_system.entity.User;
 import com.group8.movie_reservation_system.exception.EntryNotFoundException;
+import com.group8.movie_reservation_system.repo.MovieRepository;
 import com.group8.movie_reservation_system.repo.ReviewRepository;
 import com.group8.movie_reservation_system.repo.UserRepository;
 import com.group8.movie_reservation_system.service.ReviewService;
@@ -23,12 +25,15 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final MovieRepository movieRepository;
 
     @Override
-    public void saveReview(RequestReviewDto dto) {
-        User user = userRepository.findById(dto.getUserId())
+    public void saveReview(RequestReviewDto dto,String id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntryNotFoundException("User not found"));
-        Review review = new Review(dto.getContent(), dto.getRating(), user);
+        Movie movie = movieRepository.findById(dto.getMovieId()).orElseThrow(() -> new EntryNotFoundException("Movie not found"));
+
+        Review review = new Review(dto.getContent(), dto.getRating(), user,movie);
         reviewRepository.save(review);
     }
 
@@ -120,6 +125,11 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void deleteReview(Long id) {
         reviewRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Review> findAll() {
+        return reviewRepository.findAll();
     }
 
     private ResponseReviewDto toResponseReviewDto(Review review) {

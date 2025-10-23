@@ -8,12 +8,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 public class PaymentPageController {
 
-    // GET request example: /booking/payment?movieId=1
     @GetMapping("/booking/payment")
-    public String paymentPage(@RequestParam("movieId") Long movieId, Model model) {
-        System.out.println("paymentPage called with movieId: " + movieId);
-        model.addAttribute("movieId", movieId);
-        return "booking/payment"; // templates/booking/payment.html
-    }
+    public String paymentPage(
+            @RequestParam("showtimeId") Long showtimeId,
+            @RequestParam("movieId") Long movieId,
+            Model model) {
 
+        System.out.println("Payment page called with bookingId: "
+                + ", showtimeId: " + showtimeId
+                + ", movieId: " + movieId);
+
+        model.addAttribute("showtimeId", showtimeId);
+        model.addAttribute("movieId", movieId);
+
+        return "booking/payment";
+    }
 }

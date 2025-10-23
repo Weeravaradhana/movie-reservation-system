@@ -24,7 +24,7 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findByHallId(@Param("hallId") Long hallId);
 
     @Query("SELECT s FROM Seat s WHERE s.hall.hallId = :hallId AND s.seatNumber IN :seatNumbers")
-    List<Seat> lockSeatsByHallAndSeatNumbers(@Param("hallId") Long hallId, @Param("seatNumbers") List<Integer> seatNumbers);
+    List<Seat> lockSeatsByHallAndSeatNumbers(@Param("hallId") Long hallId, @Param("seatNumbers") List<String> seatNumbers);
 
     @Modifying
     @Transactional

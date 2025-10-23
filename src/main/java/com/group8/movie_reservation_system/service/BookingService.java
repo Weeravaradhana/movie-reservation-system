@@ -10,7 +10,7 @@ import org.springframework.data.domain.PageRequest;
 
 public interface BookingService {
 
-    ResponseBookingDto createBooking(RequestBookingDto dto);
+    ResponseBookingDto createBooking(RequestBookingDto dto,String id);
 
     void cancelBooking(Long bookingId);
 

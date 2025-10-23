@@ -33,7 +33,7 @@ public class MovieServiceImpl implements MovieService {
     private final ReviewRepository reviewRepository;
     private final SystemLogService logService;
 
-    // ================== CREATE MOVIE ==================
+
     public ResponseMovieDto createMovie(RequestMovieDto dto, String adminId) {
         Movie movie = Movie.builder()
                 .title(dto.getTitle())
@@ -51,7 +51,7 @@ public class MovieServiceImpl implements MovieService {
         return toResponseMovieDto(saved);
     }
 
-    // ================== GET ALL MOVIES (PAGINATED) ==================
+
     public MoviePaginateResponseDto getAllMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Movie> moviePage = movieRepository.findAll(pageable);
@@ -66,14 +66,14 @@ public class MovieServiceImpl implements MovieService {
                 .build();
     }
 
-    // ================== GET MOVIE BY ID ==================
+
     public ResponseMovieDto getMovieById(Long id) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Movie not found with ID: " + id));
         return toResponseMovieDto(movie);
     }
 
-    // ================== UPDATE MOVIE ==================
+
     public ResponseMovieDto updateMovie(Long id, RequestMovieDto dto, String adminId) {
         Movie updatedMovie = movieRepository.findById(id).map(movie -> {
             movie.setTitle(dto.getTitle());
@@ -92,7 +92,7 @@ public class MovieServiceImpl implements MovieService {
         return toResponseMovieDto(updatedMovie);
     }
 
-    // ================== DELETE MOVIE ==================
+
     public void deleteMovie(Long id, String adminId) {
         movieRepository.findById(id).ifPresentOrElse(movie -> {
             movieRepository.deleteById(id);
@@ -102,7 +102,6 @@ public class MovieServiceImpl implements MovieService {
         });
     }
 
-    // ================== GET TOTAL COUNT ==================
     public long getMovieCount() {
         return movieRepository.count();
     }
@@ -149,27 +148,26 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public List<ResponseReviewDto> getReviewsByMovie(Long movieId) {
-        // 🔹 Movie එකට අදාළ reviews DB එකෙන් ගන්නවා
         List<Review> reviews = reviewRepository.findByMovieId(movieId);
 
-        // 🔹 Review list එක DTO list එකකට map කරනවා
+
         return reviews.stream().map(review -> ResponseReviewDto.builder()
                 .id(review.getId())
-                .content(review.getContent())                  // review content
-                .rating(review.getRating())                    // review rating
-                .status(review.getStatus().name())            // review status (PENDING, APPROVED, REJECTED)
-                .userId(review.getUser().getId().toString())  // user ID string එකට convert කරන්න
-                .userName(review.getUser().getFullName())     // user name
-                .adminResponse(review.getAdminResponse())     // admin response
-                .adminResponseAt(review.getAdminResponseAt()) // admin response time
-                .createdAt(review.getCreatedAt())             // created at
-                .updatedAt(review.getUpdatedAt())             // updated at
+                .content(review.getContent())
+                .rating(review.getRating())
+                .status(review.getStatus().name())
+                .userId(review.getUser().getId().toString())
+                .userName(review.getUser().getFullName())
+                .adminResponse(review.getAdminResponse())
+                .adminResponseAt(review.getAdminResponseAt())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
                 .build()
         ).collect(Collectors.toList());
     }
 
 
-    // ================== Helper DTO Mapper ==================
+
     private ResponseMovieDto toResponseMovieDto(Movie movie) {
         return ResponseMovieDto.builder()
                 .id(movie.getId())

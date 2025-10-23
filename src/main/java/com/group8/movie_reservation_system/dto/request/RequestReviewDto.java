@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RequestReviewDto {
     private String content;
+    private Long movieId;
     private Integer rating;
     private String userId;
 }

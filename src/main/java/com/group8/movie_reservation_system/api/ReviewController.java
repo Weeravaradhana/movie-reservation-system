@@ -20,13 +20,14 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<StandardResponseDto> createReview(@RequestBody RequestReviewDto dto, HttpSession session) {
-
+        System.out.println("djfjdhfjdfhjdh" + dto.getMovieId());
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
+        String loggedUserId = (String) session.getAttribute("loggedUserId");
 
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
-            reviewService.saveReview(dto);
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
+            reviewService.saveReview(dto,loggedUserId);
             return ResponseEntity.ok(
                     StandardResponseDto.builder()
                             .code(200)
@@ -45,7 +46,7 @@ public class ReviewController {
 
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<StandardResponseDto> approveReview(
             @PathVariable Long id,
             @RequestParam String adminResponse,
@@ -53,7 +54,7 @@ public class ReviewController {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
 
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseReviewDto response = reviewService.approveReview(id, adminResponse);
             return ResponseEntity.ok(
                     StandardResponseDto.builder()
@@ -73,7 +74,7 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<StandardResponseDto> rejectReview(
             @PathVariable Long id,
             @RequestParam String adminResponse,
@@ -81,7 +82,7 @@ public class ReviewController {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
 
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseReviewDto response = reviewService.rejectReview(id, adminResponse);
             return ResponseEntity.ok(
                     StandardResponseDto.builder()
@@ -102,14 +103,14 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}/reply")
-    @PreAuthorize("hasAnyRole('ADMIN','USER')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_USER')")
     public ResponseEntity<StandardResponseDto> replyToReview(
             @PathVariable Long id,
             @RequestParam String adminResponse,
             HttpSession session) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("USER")) {
             ResponseReviewDto response = reviewService.replyToReview(id, adminResponse);
             return ResponseEntity.ok(
                     StandardResponseDto.builder()
@@ -131,7 +132,7 @@ public class ReviewController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<StandardResponseDto> getReviewsByUser(
             @PathVariable String userId,
             @RequestParam(defaultValue = "0") int page,
@@ -140,7 +141,7 @@ public class ReviewController {
 
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
             return ResponseEntity.ok(
                     StandardResponseDto.builder()
                             .code(200)
@@ -161,7 +162,7 @@ public class ReviewController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<StandardResponseDto> getReviewsByStatus(
             @PathVariable Review.ReviewStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -169,7 +170,7 @@ public class ReviewController {
             HttpSession session) {
 
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        if (loggedUserRole.equals("ADMIN")) {
+        if (loggedUserRole.equals("ROLE_ADMIN")) {
             return ResponseEntity.ok(
                     StandardResponseDto.builder()
                             .code(200)
@@ -188,4 +189,28 @@ public class ReviewController {
 
 
     }
+
+
+    @GetMapping("/admin/find-all")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<StandardResponseDto> getAllReviews(
+            HttpSession session) {
+
+        String loggedUserRole = (String) session.getAttribute("loggedUserRole");
+        if ("ROLE_ADMIN".equals(loggedUserRole)) {
+            return ResponseEntity.ok(
+                    StandardResponseDto.builder()
+                            .code(200)
+                            .message("All reviews fetched successfully")
+                            .data(reviewService.findAll())
+                            .build()
+            );
+        }
+
+        return new ResponseEntity<>(
+                new StandardResponseDto(403, "Forbidden: Only admin can view all reviews", null),
+                HttpStatus.FORBIDDEN
+        );
+    }
+
 }

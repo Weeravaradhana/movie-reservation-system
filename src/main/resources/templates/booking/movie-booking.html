@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Now Showing - Movie Booking</title>
+    <title>Now Showing - MovieReserve</title>
 
     <!-- Bootstrap & FontAwesome -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
     <style>
-        body { background: #f5f7fa; }
-        h3 { color: #333; font-weight: 600; text-align:center; }
+        body { background: #121212; color: #fff; }
+        h3 { color: #ff3d00; font-weight: 600; text-align:center; margin-bottom: 40px; }
 
         .movie-card img {
             height: 300px;
@@ -19,54 +19,99 @@
             object-fit: cover;
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
+            transition: transform 0.3s;
         }
 
         .movie-card {
             border: none;
             border-radius: 10px;
             overflow: hidden;
+            background: #1e1e1e;
             transition: all 0.3s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(255,255,255,0.1);
         }
 
-        .movie-card:hover {
+        .movie-card:hover img {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        .card-body {
-            background: #fff;
-        }
+        .card-body { background: #1e1e1e; }
 
         .btn-primary {
-            background-color: #007bff;
+            background-color: #ff3d00;
             border: none;
             font-weight: 500;
         }
 
         .btn-primary:hover {
-            background-color: #0056b3;
+            background-color: #e63900;
         }
+
+        .navbar, .footer {
+            background: #1e1e1e;
+            color: #fff;
+        }
+
+        .footer { padding: 20px 0; text-align:center; margin-top: 50px; }
     </style>
 </head>
 <body>
+
+<!-- Header -->
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">MovieReserve</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">Home</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/booking/movie/1}">Movies</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/signup}">Sign Up</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/login}">Login</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
 <div class="container py-5">
-    <h3 class="mb-4">🎬 Now Showing</h3>
-    <!-- Movies Grid -->
+    <h3>🎬 Now Showing</h3>
     <div class="row row-cols-1 row-cols-md-3 g-4" id="moviesContainer"></div>
 </div>
 
-<!-- Inline JS -->
+<!-- Footer -->
+<div class="footer">
+    &copy; 2025 MovieReserve. All rights reserved.
+</div>
+
 <script>
+    // Fetch first available showtime for a movie
+    async function getFirstShowtimeId(movieId) {
+        try {
+            const res = await fetch(`/showtime-management-service/api/v1/showtimes/by-movie/${movieId}`);
+            const data = await res.json();
+            if (data && Array.isArray(data) && data.length > 0) {
+                return data[0].showtimeId; // first available showtime
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        return null;
+    }
+
     async function loadMovies() {
         try {
+            // 1. Fetch movies
             const res = await fetch('/movie-management-service/api/v1/movies/visitors/find-all?page=0&size=12');
             const response = await res.json();
 
-            if(response.code !== 200 || !response.data || !Array.isArray(response.data.dataList)) {
-                console.error('Invalid response format', response);
-                return;
-            }
+            // 2. Fetch all showtimes
+            const res1 = await fetch('/show-time-management-service/api/v1/showtimes/find-all');
+            const allShowtimes = await res1.json(); // assume this is an array of showtime objects
+
+            if(response.code !== 200 || !response.data || !Array.isArray(response.data.dataList)) return;
 
             const movies = response.data.dataList;
             const container = document.getElementById('moviesContainer');
@@ -77,39 +122,44 @@
                 col.className = 'col';
 
                 col.innerHTML = `
-                <div class="card movie-card h-100">
-                    <img src="${movie.posterUrl || ''}" alt="${movie.title}">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">${movie.title}</h5>
-                        <p class="card-text text-muted">${movie.genre || ''}</p>
-                        <button class="btn btn-primary w-100 select-seat-btn" data-movie='${JSON.stringify(movie)}'>
-                            <i class="fas fa-ticket-alt me-2"></i>Select Seats
-                        </button>
-                    </div>
+            <div class="card movie-card h-100">
+                <img src="${movie.posterUrl || '/images/default-movie.jpg'}" alt="${movie.title}">
+                <div class="card-body text-center">
+                    <h5 class="card-title">${movie.title}</h5>
+                    <p class="card-text text-muted">${movie.genre || ''}</p>
+                    <button class="btn btn-primary w-100 select-seat-btn" data-movie='${JSON.stringify(movie)}'>
+                        <i class="fas fa-ticket-alt me-2"></i>Select Seats
+                    </button>
                 </div>
-            `;
+            </div>`;
                 container.appendChild(col);
             });
 
             document.querySelectorAll('.select-seat-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const movie = JSON.parse(btn.dataset.movie);
-console.log(movie.id);
-                    window.location.href = `/booking/movie/seats?movieId=${movie.id}`;
 
+
+                    const showtimeForMovie = allShowtimes.find(s => s.movie.id === movie.id);
+                    if (!showtimeForMovie) {
+                        alert('No showtime available for this movie!');
+                        return;
+                    }
+
+
+                    window.location.href = `/booking/movie/${movie.id}/showtime/${showtimeForMovie.showtimeId}/seats`;
                 });
             });
 
         } catch(err) {
-            console.error('Error loading movies:', err);
+            console.error(err);
         }
     }
 
-    // Initialize on page load
     document.addEventListener('DOMContentLoaded', loadMovies);
+
 </script>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

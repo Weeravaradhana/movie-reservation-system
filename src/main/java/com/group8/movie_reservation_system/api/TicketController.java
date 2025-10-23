@@ -201,7 +201,7 @@ public class TicketController {
             @RequestParam String response,
             HttpSession session
     ) {
-
+        System.out.println(response);
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
         if (loggedUserRole.equals("ROLE_ADMIN")) {
             ResponseTicketDto ticket = ticketService.addAdminResponse(ticketId, response);

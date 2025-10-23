@@ -1,5 +1,6 @@
 package com.group8.movie_reservation_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,11 +30,12 @@ public class Review {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore // prevent circular reference to User
     private User user;
 
-    // 🔹 Movie mapping added
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "movie_id", nullable = false)
+    @JoinColumn(name = "movie_id")
+    @JsonIgnore // prevent circular reference to Movie
     private Movie movie;
 
     @Column(name = "created_at")

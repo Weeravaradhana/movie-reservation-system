@@ -14,6 +14,7 @@ import com.group8.movie_reservation_system.service.BookingService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,12 +32,12 @@ public class BookingServiceImpl implements BookingService {
     private final com.group8.movie_reservation_system.repository.ShowtimeRepository showtimeRepo;
     private final UserRepository userRepo;
 
-    // ===== CREATE BOOKING =====
-    @Override
-    public ResponseBookingDto createBooking(RequestBookingDto dto) {
 
+    @Override
+    public ResponseBookingDto createBooking(RequestBookingDto dto, String userId) {
         Showtime showtime = showtimeRepo.findById(dto.getShowtimeId())
-                .orElseThrow(()-> new EntryNotFoundException("Show time not found"));
+                .orElseThrow(() -> new EntryNotFoundException("Showtime not found"));
+
 
         List<Seat> seats = seatRepo
                 .lockSeatsByHallAndSeatNumbers(showtime.getHall().getHallId().longValue(), dto.getSeatNumbers());
@@ -45,7 +46,7 @@ public class BookingServiceImpl implements BookingService {
                 .map(Seat::getSeatNumber)
                 .collect(Collectors.toSet());
 
-        for (Integer sNum : dto.getSeatNumbers()) {
+        for (String sNum : dto.getSeatNumbers()) {
             if (!foundSeatNumbers.contains(sNum)) {
                 throw new EntryNotFoundException("Seat not found: " + sNum);
             }
@@ -57,7 +58,9 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        User user = userRepo.findById(dto.getUserId()).orElseThrow(() -> new EntryNotFoundException("User not found"));
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntryNotFoundException("User not found"));
+
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setShowtime(showtime);
@@ -75,6 +78,7 @@ public class BookingServiceImpl implements BookingService {
         return mapToResponseBookingDto(booking);
     }
 
+
     @Override
     public void cancelBooking(Long bookingId) {
         Booking booking = bookingRepo.findById(bookingId)
@@ -82,12 +86,13 @@ public class BookingServiceImpl implements BookingService {
 
         for (Seat seat : booking.getSeats()) {
             seat.setStatus("AVAILABLE");
-            seatRepo.save(seat);
         }
+        seatRepo.saveAll(booking.getSeats());
 
         booking.setStatus("CANCELLED");
         bookingRepo.save(booking);
     }
+
 
     @Override
     public BookingPaginateResponseDto listBookingsByUser(int page, int size, String userId) {
@@ -101,6 +106,7 @@ public class BookingServiceImpl implements BookingService {
 
         return new BookingPaginateResponseDto(dtoList, dtoList.size());
     }
+
 
     @Override
     public AvailablePaginateResponseDto getAvailableSeats(int page, int size, Long showtimeId) {
@@ -116,8 +122,9 @@ public class BookingServiceImpl implements BookingService {
         return new AvailablePaginateResponseDto(dtoList, dtoList.size());
     }
 
+
     @Override
-    public ResponseBookingDto updateBooking(RequestBookingDto dto,Long bookingId) {
+    public ResponseBookingDto updateBooking(RequestBookingDto dto, Long bookingId) {
         Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new EntryNotFoundException("Booking not found"));
 
@@ -126,15 +133,16 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new EntryNotFoundException("Showtime not found"))
                 : booking.getShowtime();
 
+
         for (Seat s : booking.getSeats()) {
             s.setStatus("AVAILABLE");
-            seatRepo.save(s);
         }
-
+        seatRepo.saveAll(booking.getSeats());
         booking.getSeats().clear();
 
-        List<Seat> newSeats = seatRepo
-                .lockSeatsByHallAndSeatNumbers(showtime.getHall().getHallId().longValue(), dto.getSeatNumbers());
+
+        List<Seat> newSeats = seatRepo.lockSeatsByHallAndSeatNumbers(
+                showtime.getHall().getHallId().longValue(), dto.getSeatNumbers());
 
         for (Seat s : newSeats) {
             if ("BOOKED".equalsIgnoreCase(s.getStatus())) {
@@ -145,7 +153,7 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setShowtime(showtime);
         booking.getSeats().addAll(newSeats);
-
+        booking.setStatus("UPDATED");
         bookingRepo.save(booking);
         seatRepo.saveAll(newSeats);
 
@@ -153,32 +161,22 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public double getTotalRevenue() {
-        return 0;
-    }
+    public double getTotalRevenue() { return 0; }
 
     @Override
-    public long getTotalBookingCount() {
-        return 0;
-    }
+    public long getTotalBookingCount() { return 0; }
 
     @Override
-    public ResponseBookingDto confirmBooking(Long bookingId) {
-        return null;
-    }
+    public ResponseBookingDto confirmBooking(Long bookingId) { return null; }
 
     @Override
-    public long getBookingCountByUserId(String userId) {
-        return 0;
-    }
+    public long getBookingCountByUserId(String userId) { return 0; }
 
     @Override
-    public Object getBookingsByUserId(String userId, PageRequest of) {
-        return null;
-    }
+    public Object getBookingsByUserId(String userId, PageRequest of) { return null; }
+
 
     private ResponseBookingDto mapToResponseBookingDto(Booking booking) {
-
         ResponseShowtimeDto showtimeDto = ResponseShowtimeDto.builder()
                 .showtimeId(booking.getShowtime().getId())
                 .movie(toResponseMovieDto(booking.getShowtime().getMovie()))
@@ -188,7 +186,6 @@ public class BookingServiceImpl implements BookingService {
                 .price(booking.getShowtime().getPrice())
                 .build();
 
-
         List<ResponseSeatDto> seatDtos = booking.getSeats().stream()
                 .map(seat -> ResponseSeatDto.builder()
                         .seatId(seat.getSeatId())
@@ -197,13 +194,11 @@ public class BookingServiceImpl implements BookingService {
                         .build())
                 .toList();
 
-
         ResponseUserDto userDto = ResponseUserDto.builder()
                 .id(booking.getUser().getId())
                 .fullName(booking.getUser().getFullName())
                 .username(booking.getUser().getUsername())
                 .build();
-
 
         return ResponseBookingDto.builder()
                 .bookingId(booking.getId())
@@ -254,10 +249,10 @@ public class BookingServiceImpl implements BookingService {
         if (requestUserDto == null) return null;
 
         return User.builder()
-                .id(java.util.UUID.randomUUID().toString()) // Unique ID generate
+                .id(java.util.UUID.randomUUID().toString())
                 .fullName(requestUserDto.getFullName())
                 .username(requestUserDto.getUsername())
-                .passwordHash(hashPassword(requestUserDto.getPassword())) // Password hash කරන්න
+                .passwordHash(hashPassword(requestUserDto.getPassword()))
                 .accountNonExpired(true)
                 .accountNonLocked(true)
                 .credentialsNonExpired(true)
@@ -267,9 +262,7 @@ public class BookingServiceImpl implements BookingService {
 
     private String hashPassword(String password) {
         if (password == null) return null;
-        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(password);
+        return new BCryptPasswordEncoder().encode(password);
     }
-
-
 
 }

@@ -22,7 +22,6 @@ public class SeatController {
 
     private final SeatService seatService;
 
-    // Get seat by ID
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/user/{seatId}")
     public ResponseEntity<StandardResponseDto> getSeat(@PathVariable Long seatId) {
@@ -33,7 +32,6 @@ public class SeatController {
         return new ResponseEntity<>(new StandardResponseDto(200, "Seat fetched successfully", seat), HttpStatus.OK);
     }
 
-    // Get available seats for a showtime (booked=false only)
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/user/available-seats/{showtimeId}")
     public ResponseEntity<StandardResponseDto> getAvailableSeatsByShowtime(@PathVariable Long showtimeId) {
@@ -43,7 +41,6 @@ public class SeatController {
             return new ResponseEntity<>(new StandardResponseDto(404, "Showtime/Hall not found", null), HttpStatus.NOT_FOUND);
         }
 
-        // booked=false seats filter
         List<ResponseSeatDto> availableSeats = hall.getSeats().stream()
                 .filter(seat -> !seat.isBooked())
                 .toList();
@@ -74,8 +71,6 @@ public class SeatController {
 
 
 
-
-    // Check if seat is booked
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/user/isBooked")
     public ResponseEntity<StandardResponseDto> isSeatBooked(@RequestParam Long seatId,
@@ -84,7 +79,6 @@ public class SeatController {
         return new ResponseEntity<>(new StandardResponseDto(200, "Seat booking status fetched", booked), HttpStatus.OK);
     }
 
-    // Admin endpoints
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/hall/{hallId}")
     public ResponseEntity<StandardResponseDto> getHall(@PathVariable Long hallId) {
@@ -122,7 +116,6 @@ public class SeatController {
         return new ResponseEntity<>(new StandardResponseDto(200, "Seat deleted successfully", null), HttpStatus.OK);
     }
 
-    // Get all seats for a showtime (includes booked)
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @GetMapping("/showtime/{showtimeId}")
     public ResponseEntity<StandardResponseDto> getSeatsByShowtime(@PathVariable Long showtimeId) {

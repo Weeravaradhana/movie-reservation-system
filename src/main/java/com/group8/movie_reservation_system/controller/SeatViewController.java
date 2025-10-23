@@ -30,29 +30,25 @@ public class SeatViewController {
     public String selectSeats(@PathVariable Long movieId,
                               @PathVariable Long showtimeId,
                               Model model) {
-        // 1. Get movie info
         ResponseMovieDto movie = movieService.getMovieById(movieId);
 
-        // 2. Get showtime
         ResponseShowtimeDto showtime = showtimeService.getShowtimeById(showtimeId);
 
-        // 3. Get hall seats
         List<Seat> seats = seatService.getSeatsByHallId(showtime.getHall().getHallId());
 
-        // 4. Convert to DTO for frontend
         List<ResponseSeatDto> seatDtos = seats.stream()
                 .map(seat -> ResponseSeatDto.builder()
                         .seatNumber(seat.getSeatNumber())
                         .price(seat.getPrice())
                         .status(seat.getStatus())
                         .booked(seat.isBooked())
-                        .seatId(seat.getSeatId())  // ✅ make sure seatId is included
+                        .seatId(seat.getSeatId())
                         .build())
                 .collect(Collectors.toList());
 
         // 5. Send to Thymeleaf
         model.addAttribute("movie", movie);
-        model.addAttribute("showtime", showtime);  // ✅ Add showtime to model
+        model.addAttribute("showtime", showtime);
         model.addAttribute("seats", seatDtos);
 
         return "booking/seats";

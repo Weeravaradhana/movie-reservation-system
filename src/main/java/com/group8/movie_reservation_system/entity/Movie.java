@@ -35,8 +35,16 @@ public class Movie {
 
     private String status = "ACTIVE";
 
-    @OneToMany(mappedBy = "movie")
+    // 🔹 Avoid recursion when serializing
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Showtime> showtimes = new ArrayList<>();
 
+    // 🔹 Added to avoid infinite recursion with Review
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Review> reviews = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Movie movie;
 }

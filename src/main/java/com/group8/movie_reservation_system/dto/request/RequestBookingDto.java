@@ -14,6 +14,6 @@ import java.util.List;
 public class RequestBookingDto {
     private Long showtimeId;
     private String userId;
-    private List<Integer> seatNumbers;
+    private List<String> seatNumbers;
 
 }

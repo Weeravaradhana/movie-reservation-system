@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/booking-management-service/api/v1/bookings")
 @RequiredArgsConstructor
@@ -28,7 +27,7 @@ public class BookingController {
     private final BookingService bookingService;
     private final SeatService seatService;
 
-
+    // ===== CREATE BOOKING =====
     @PostMapping("/create")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<StandardResponseDto> createBooking(
@@ -36,23 +35,32 @@ public class BookingController {
             HttpSession session
     ) {
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
+        String loggedUserId = (String) session.getAttribute("loggedUserId");
 
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
+        if (loggedUserRole == null || loggedUserId == null) {
+            return new ResponseEntity<>(
+                    new StandardResponseDto(401, "Unauthorized: Please log in first", null),
+                    HttpStatus.UNAUTHORIZED
+            );
+        }
 
-            ResponseBookingDto bookingDto = bookingService
-                    .createBooking(dto);
+        if (loggedUserRole.equals("ROLE_ADMIN") || loggedUserRole.equals("ROLE_USER")) {
+            dto.setUserId(loggedUserId);
+            ResponseBookingDto bookingDto = bookingService.createBooking(dto, loggedUserId);
+
+            // === Payment flow trigger (frontend will redirect after receiving this response)
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new StandardResponseDto(201, "Booking created successfully", bookingDto));
+                    .body(new StandardResponseDto(201,
+                            "Booking created successfully. Proceed to payment.", bookingDto));
         }
 
         return new ResponseEntity<>(
-                new StandardResponseDto(401, "Unauthorized: No active session", null),
+                new StandardResponseDto(401, "Unauthorized: Invalid role", null),
                 HttpStatus.UNAUTHORIZED
         );
-
     }
 
-
+    // ===== CANCEL BOOKING =====
     @PostMapping("/cancel/{bookingId}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<StandardResponseDto> cancelBooking(
@@ -81,29 +89,24 @@ public class BookingController {
             HttpSession session
     ) {
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
-        String loggedUserIdStr = (String) session.getAttribute("loggedUserId");
+        String loggedUserId = (String) session.getAttribute("loggedUserId");
 
-        if (loggedUserRole == null || loggedUserIdStr == null) {
+        if (loggedUserRole == null || loggedUserId == null) {
             return new ResponseEntity<>(
-                    new StandardResponseDto(401, "Unauthorized: No active session", null),
+                    new StandardResponseDto(401, "Unauthorized: Please log in", null),
                     HttpStatus.UNAUTHORIZED
             );
         }
 
-        BookingPaginateResponseDto response;
-        if ("ADMIN".equalsIgnoreCase(loggedUserRole)) {
-            response = bookingService.listBookingsByUser(page, size, loggedUserIdStr);
-        } else {
-
-            response = bookingService.listBookingsByUser(page, size, loggedUserIdStr);
-        }
+        BookingPaginateResponseDto response =
+                bookingService.listBookingsByUser(page, size, loggedUserId);
 
         return ResponseEntity.ok(
                 new StandardResponseDto(200, "Bookings fetched successfully", response)
         );
     }
 
-    // ===== GET AVAILABLE SEATS =====
+    // ===== AVAILABLE SEATS =====
     @GetMapping("/available/{showtimeId}")
     @PreAuthorize("hasAnyRole('ADMIN','USER')")
     public ResponseEntity<StandardResponseDto> getAvailableSeats(
@@ -113,53 +116,59 @@ public class BookingController {
     ) {
         AvailablePaginateResponseDto response = bookingService.getAvailableSeats(page, size, showtimeId);
         return new ResponseEntity<>(
-                new StandardResponseDto(200, "Available seats fetched successfully", response)
-                ,HttpStatus.OK
+                new StandardResponseDto(200, "Available seats fetched successfully", response),
+                HttpStatus.OK
         );
     }
 
-    @PutMapping("/update/{newShowtimeId}")
+    // ===== UPDATE BOOKING =====
+    @PutMapping("/update/{bookingId}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<StandardResponseDto> updateBooking(
             @RequestBody RequestBookingDto dto,
-            @PathVariable(required = false) Long newShowtimeId,
-
+            @PathVariable Long bookingId,
             HttpSession session
     ) {
-
         String loggedUserRole = (String) session.getAttribute("loggedUserRole");
 
-        if (loggedUserRole.equals("ADMIN") || loggedUserRole.equals("USER")) {
-            ResponseBookingDto updatedBooking = bookingService
-                    .updateBooking(dto, newShowtimeId);
-            return ResponseEntity.ok(
-                    new StandardResponseDto(200, "Booking updated successfully", updatedBooking)
+        if (loggedUserRole == null) {
+            return new ResponseEntity<>(
+                    new StandardResponseDto(401, "Unauthorized: Please log in", null),
+                    HttpStatus.UNAUTHORIZED
             );
         }
 
-
-        return new ResponseEntity<>(
-                new StandardResponseDto(401, "Unauthorized: No active session", null),
-                HttpStatus.UNAUTHORIZED
+        ResponseBookingDto updatedBooking = bookingService.updateBooking(dto, bookingId);
+        return ResponseEntity.ok(
+                new StandardResponseDto(200, "Booking updated successfully", updatedBooking)
         );
     }
 
+    // ===== CONFIRM SEATS (Before Payment) =====
     @PostMapping("/confirm-seats")
-    public ResponseEntity<?> confirmSeats(
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<StandardResponseDto> confirmSeats(
             @RequestParam Long showtimeId,
-            @RequestBody List<RequestSeatSelectionDto> seats) {
-
+            @RequestBody List<RequestSeatSelectionDto> seats
+    ) {
         if (seats.isEmpty()) {
-            return ResponseEntity.badRequest().body("No seats selected");
+            return ResponseEntity.badRequest()
+                    .body(new StandardResponseDto(400, "No seats selected", null));
         }
 
         try {
             BigDecimal totalPrice = seatService.bookSeats(showtimeId, seats);
-            return ResponseEntity.ok("Seats successfully booked. Total Price: $" + totalPrice);
+            return ResponseEntity.ok(
+                    new StandardResponseDto(200,
+                            "Seats confirmed. Proceed to payment.",
+                            totalPrice)
+            );
         } catch (DuplicateEntryException e) {
-            return ResponseEntity.status(409).body(e.getMessage());
+            return ResponseEntity.status(409)
+                    .body(new StandardResponseDto(409, e.getMessage(), null));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(500).body(e.getMessage());
+            return ResponseEntity.status(500)
+                    .body(new StandardResponseDto(500, e.getMessage(), null));
         }
     }
 

@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -16,4 +18,12 @@ public class RequestPaymentDto {
     private BigDecimal amount;
     private String method;
     private int promoCode;
+    private Long cardNumber;
+    private Date expiryDate;
+    private String cardHolderName;
+
+
+    private String userId;
+    private Long showtimeId;
+    private List<Long> seatIds;
 }

@@ -376,3 +376,4 @@ public String addMovie(@RequestParam String title,
 6. **Use meaningful redirects** with appropriate messages
 7. **Keep controllers focused** on single responsibilities
 8. **Use consistent naming** for routes and methods
+

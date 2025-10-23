@@ -17,7 +17,7 @@ public class UserRoleServiceImpl implements UserRoleService {
 
     public void initializeRoles() {
         if(userRoleRepo.count() == 0) {
-            UserRole admin = new UserRole("ROLE_ADMIN","ROLE_USER");
+            UserRole admin = new UserRole("ROLE_ADMIN","ROLE_ADMIN");
             UserRole user = new UserRole("ROLE_USER","ROLE_USER");
 
             userRoleRepo.saveAll(List.of(admin, user));

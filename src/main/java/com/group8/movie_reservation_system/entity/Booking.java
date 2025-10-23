@@ -26,9 +26,9 @@ public class Booking {
     public Showtime showtime;
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<Seat> seats = new ArrayList<>();
-    @OneToOne(mappedBy = "booking")
+    @OneToMany(mappedBy = "booking",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    public Payment payment; // optional until paid
+    public List<Payment> payment; // optional until paid
     @Column(name = "status")
     public String status = "PENDING";
     @Column(name = "timestamp")
